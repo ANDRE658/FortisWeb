@@ -1,0 +1,139 @@
+body {
+      background-color: #00008B;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      background-color: #000066;
+      border-bottom: 2px solid #00BFFF;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .navbar-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      color: white;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .navbar-icon {
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .main-container {
+      display: flex;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #000055;
+      color: white;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .user-profile {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .user-profile img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid #00BFFF;
+      object-fit: cover;
+    }
+
+    .user-name {
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .nav-menu {
+      list-style: none;
+      padding: 0;
+      width: 100%;
+    }
+
+    .nav-menu li {
+      padding: 12px 25px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-size: 16px;
+    }
+
+    .nav-menu li:hover {
+      background-color: #00008B;
+    }
+
+    .nav-menu li i {
+      margin-right: 10px;
+    }
+
+    .content {
+      flex: 1;
+      background-color: #4A90E2;
+      padding: 30px;
+      overflow-y: auto;
+      color: white;
+    }
+
+    .welcome-title {
+      font-size: 28px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .stats-cards {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background-color: #f5f0e1;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      min-width: 200px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      color: #333;
+    }
+
+    .stat-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #555;
+    }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .total-alunos { color: #0056b3; }
+    .ativos { color: #28a745; }
+    .novos { color: #fd7e14; }

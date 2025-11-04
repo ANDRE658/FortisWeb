@@ -1,0 +1,57 @@
+// Carrega o nome do usuário salvo no localStorage
+document.addEventListener("DOMContentLoaded", function () {
+  const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
+  document.getElementById("userName").textContent = nomeUsuario;
+
+  // Simula clique nos menus
+  document.querySelectorAll(".nav-menu li").forEach((item) => {
+    item.addEventListener("click", function () {
+      if (!this.classList.contains("active")) {
+        document
+          .querySelector(".nav-menu li.active")
+          .classList.remove("active");
+        this.classList.add("active");
+        // Redireciona conforme o menu clicado
+        if (this.textContent.trim() === "Alunos") {
+          window.location.href = "alunos.html";
+        } else if (this.textContent.trim() === "Planos") {
+          window.location.href = "planos.html";
+        } else if (this.textContent.trim() === "Treinos") {
+          window.location.href = "treinos.html";
+        } else if (this.textContent.trim() === "Exercícios") {
+          window.location.href = "exercicios.html";
+        } else if (this.textContent.trim() === "Relatórios") {
+          window.location.href = "relatorios.html";
+        }
+      }
+    });
+  });
+
+  // Botão de sair
+  document
+    .querySelector(".bi-box-arrow-right")
+    .addEventListener("click", function () {
+      if (confirm("Deseja sair do sistema?")) {
+        localStorage.removeItem("usuarioLogado");
+        window.location.href = "login.html";
+      }
+    });
+
+  // Formulário de cadastro de exercício
+  document
+    .getElementById("cadastroExercicioForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const nomeExercicio = document.getElementById("nomeExercicio").value;
+
+      // Simulação de salvamento
+      alert(`Exercício cadastrado com sucesso!\nNome: ${nomeExercicio}`);
+
+      // Redireciona para a lista de exercícios
+      window.location.href = "exercicios.html";
+    });
+    iconHome.addEventListener("click", function () {
+    window.location.href = "Home.html";
+  });
+});

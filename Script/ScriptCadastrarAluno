@@ -1,0 +1,70 @@
+// Carrega o nome do usuário salvo no localStorage
+document.addEventListener("DOMContentLoaded", function () {
+  const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
+  document.getElementById("userName").textContent = nomeUsuario;
+
+  // Simula clique nos menus
+  document.querySelectorAll(".nav-menu li").forEach((item) => {
+  // Note que mudei o parâmetro 'alunos' para 'event', que é o nome correto
+  item.addEventListener("click", function (event) {
+    // Pega o destino do atributo 'data-page' do item clicado
+    const pagina = event.currentTarget.dataset.page;
+
+    if (pagina) {
+      window.location.href = pagina;
+    }
+  });
+
+  iconHome.addEventListener("click", function () {
+    window.location.href = "Home.html"; 
+  });
+});
+
+  // Botão de sair
+  document
+    .querySelector(".bi-box-arrow-right")
+    .addEventListener("click", function () {
+      if (confirm("Deseja sair do sistema?")) {
+        localStorage.removeItem("usuarioLogado");
+        window.location.href = "Index.html";
+      }
+    });
+
+  // Formulário de cadastro
+  document
+    .getElementById("cadastroAlunoForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const nome = document.getElementById("nome").value;
+      const email = document.getElementById("email").value;
+      const cpf = document.getElementById("cpf").value;
+      const nascimento = document.getElementById("nascimento").value;
+      const altura = document.getElementById("altura").value;
+      const peso = document.getElementById("peso").value;
+      const cep = document.getElementById("cep").value;
+      const cidade = document.getElementById("cidade").value;
+      const estado = document.getElementById("estado").value;
+      const bairro = document.getElementById("bairro").value;
+      const rua = document.getElementById("rua").value;
+      const plano = document.getElementById("plano").value;
+
+      // Simulação de salvamento
+      alert(
+        `Aluno cadastrado com sucesso!\nNome: ${nome}\nEmail: ${email}\nCPF: ${cpf}`
+      );
+
+      // Redireciona para a lista de alunos
+      window.location.href = "alunos.html";
+    });
+
+  // Botão "Criar treino Aluno"
+  document.querySelector(".btn-create").addEventListener("click", function () {
+    alert("Você deseja criar um treino?");
+  });
+
+  //Carregar a tela de criação de treino ao clicar no botão
+  document.getElementById("btCriarTreino").addEventListener("click", function () {
+    window.location.href = "CadastroTreino.html";
+  });
+});

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FORTIS - Gerenciamento de Alunos</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Fonte Playfair Display -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+  <!-- Ícones Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Estilos personalizados -->
+  <link rel="stylesheet" href="Style/StyleAlunos.css">
+</head>
+
+<body>
+
+  <!-- Barra Superior -->
+  <div class="navbar">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-house-door navbar-icon me-3" id="iconHome"></i>
+      <span class="navbar-brand">FORTIS</span>
+    </div>
+    <i class="bi bi-box-arrow-right navbar-icon" title="Sair"></i>
+  </div>
+
+  <!-- Container Principal -->
+  <div class="main-container">
+
+    <!-- Menu Lateral -->
+    <div class="sidebar">
+      <div class="user-profile">
+        <img src="Assets/Images/FotoUsuario.png" alt="Foto do Usuário" id="fotoUsario">
+        <div class="user-name" id="userName">Carregando...</div>
+      </div>
+
+      <ul class="nav-menu">
+        <li data-page="Alunos.html">Alunos</li>
+        <li data-page="Planos.html">Planos</li>
+        <li data-page="Treinos.html">Treinos</li>
+        <li data-page="Exercicios.html">Exercícios</li>
+        <li data-page="Relatorios.html">Relatórios</li>
+      </ul>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="content">
+      <h1 class="page-title">Gerenciamento de Alunos</h1>
+
+      <div class="actions-bar">
+        <button class="btn btn-add" id="btCadastrarAluno">+ Cadastrar Aluno</button>
+        <input type="text" class="search-input" placeholder="Buscar aluno...">
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome Completo</th>
+              <th>Plano</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Jorge Sandro</td>
+              <td>Gold</td>
+              <td><span class="status-ativo">Ativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon" id="iconEdit"></i>
+              </td>
+            </tr>
+            <tr>
+              <td>Kassandra M.</td>
+              <td>Silver</td>
+              <td><span class="status-inativo">Inativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox">
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon"></i>
+              </td>
+            </tr>
+            <tr>
+              <td>Lucas</td>
+              <td>Gold</td>
+              <td><span class="status-inativo">Inativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox">
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon"></i>
+              </td>
+            </tr>
+            <tr>
+              <td>Matheus</td>
+              <td>Silver</td>
+              <td><span class="status-inativo">Inativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox">
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon" ></i>
+              </td>
+            </tr>
+            <tr>
+              <td>Inacio L.</td>
+              <td>Black</td>
+              <td><span class="status-ativo">Ativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon"></i>
+              </td>
+            </tr>
+            <tr>
+              <td>Jair M.</td>
+              <td>Silver</td>
+              <td><span class="status-ativo">Ativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon"></i>
+              </td>
+            </tr>
+            <tr>
+              <td>Sandro</td>
+              <td>Gold</td>
+              <td><span class="status-ativo">Ativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon"></i>
+              </td>
+            </tr>
+            <tr>
+              <td>Cristiano</td>
+              <td>Black</td>
+              <td><span class="status-ativo">Ativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon"></i>
+              </td>
+            </tr>
+            <tr>
+              <td>Luiza</td>
+              <td>Gold</td>
+              <td><span class="status-ativo">Ativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon"></i>
+              </td>
+            </tr>
+            <tr>
+              <td>Sandro</td>
+              <td>Gold</td>
+              <td><span class="status-ativo">Ativo</span></td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox" checked>
+                  <span class="slider"></span>
+                </label>
+                <i class="bi bi-pencil action-icon"></i>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- JavaScript para interatividade -->
+  <script src="Script/ScriptAlunos.js"></script>
+
+</body>
+
+</html>

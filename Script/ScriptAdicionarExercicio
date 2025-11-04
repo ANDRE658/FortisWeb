@@ -1,0 +1,62 @@
+// Carrega o nome do usuário salvo no localStorage
+document.addEventListener("DOMContentLoaded", function () {
+  const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
+  document.getElementById("userName").textContent = nomeUsuario;
+
+  // Simula clique nos menus
+ // Simula clique nos menus
+  document.querySelectorAll('.nav-menu li').forEach(item => {
+    // Note que mudei o parâmetro 'alunos' para 'event', que é o nome correto
+    item.addEventListener('click', function(event) {
+        
+        // Pega o destino do atributo 'data-page' do item clicado
+        const pagina = event.currentTarget.dataset.page; 
+        
+        if (pagina) {
+            window.location.href = pagina;
+        }
+    });
+});
+
+  // Botão de sair
+  document
+    .querySelector(".bi-box-arrow-right")
+    .addEventListener("click", function () {
+      if (confirm("Deseja sair do sistema?")) {
+        localStorage.removeItem("usuarioLogado");
+        window.location.href = "Index.html";
+      }
+    });
+
+  // Formulário de adição de exercício
+  document
+    .getElementById("adicionarExercicioForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const nomeTreino = document.getElementById("nomeTreino").value;
+      const aluno = document.getElementById("aluno").value;
+
+      // Coleta os dados dos exercícios
+      const rows = document.querySelectorAll(".table-row");
+      const exercicios = [];
+      rows.forEach((row) => {
+        const nome = row.querySelector('input[type="text"]').value;
+        const serie = row.querySelector(".input-série").value;
+        const rep = row.querySelector(".input-rep").value;
+        if (nome) {
+          exercicios.push({ nome, serie, rep });
+        }
+      });
+
+      // Simulação de salvamento
+      alert(
+        `Exercícios adicionados ao treino "${nomeTreino}" para o aluno "${aluno}"!\n${exercicios.length} exercícios salvos.`
+      );
+
+      // Redireciona para a tela de criação de treino
+      window.location.href = "CadastroTreino.html";
+    });
+
+  
+});
