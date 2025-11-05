@@ -1,155 +1,143 @@
-// Lista de exercícios (você pode expandir)
-const listaExercicios = [
-  "Supino",
-  "Agachamento",
-  "Rosca direta",
-  "Desenvolvimento",
-  "Peck deck",
-  "Crucifixo",
-  "Leg Press",
-  "Barra fixa",
-  "Remada curvada",
-  "Abdominal",
-  "Flexão",
-  "Puxador",
-];
+// Função helper para criar o treino e redirecionar
+async function criarTreinoParaDia(diaSemana) {
+  const token = localStorage.getItem("jwtToken");
+  const instrutorId = localStorage.getItem("instrutorId");
+  const alunoId = document.getElementById("alunoSelect").value;
+  const nomeTreino = document.getElementById("nomeTreino").value;
 
-// Carrega o nome do usuário salvo no localStorage
+  // 1. Validação
+  if (!alunoId) {
+    alert("Por favor, selecione um aluno.");
+    return;
+  }
+  if (!nomeTreino) {
+    alert("Por favor, digite um nome para o treino (Ex: Upper/Lower).");
+    return;
+  }
+  if (!token || !instrutorId) {
+    alert("Sessão expirada ou instrutor não encontrado. Faça o login novamente.");
+    window.location.href = "Index.html";
+    return;
+  }
+
+  // 2. Monta o DTO para a API
+  const treinoData = {
+    nome: nomeTreino,
+    diaSemana: diaSemana, // Ex: "SEGUNDA"
+    alunoId: parseInt(alunoId),
+    instrutorId: parseInt(instrutorId)
+  };
+
+  // 3. Salva o treino (Passo 1 do backend)
+  try {
+    const response = await fetch('http://localhost:8080/treino/salvar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(treinoData)
+    });
+
+    if (response.status === 201) {
+      const treinoCriado = await response.json();
+      
+      // 4. Redireciona para a tela de adicionar exercícios (Passo 2)
+      // Passa o ID do treino criado, o nome do aluno e o dia
+      const alunoNome = document.getElementById("alunoSelect").options[document.getElementById("alunoSelect").selectedIndex].text;
+      
+      window.location.href = `AdicionarExercicio.html?treinoId=${treinoCriado.id}&aluno=${alunoNome}&dia=${diaSemana}`;
+    
+    } else if (response.status === 404) {
+       alert("Erro: Aluno ou Instrutor não encontrado na API.");
+    } else {
+       alert("Erro ao criar o treino. Código: " + response.status);
+    }
+  } catch (error) {
+    console.error("Erro na requisição:", error);
+    alert("Não foi possível conectar à API.");
+  }
+}
+
+// Função para carregar os alunos no dropdown
+async function carregarAlunos() {
+  const token = localStorage.getItem('jwtToken');
+  const select = document.getElementById("alunoSelect");
+  
+  if (!token) {
+    alert("Sessão expirada. Faça o login.");
+    window.location.href = "Index.html";
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:8080/aluno/listar', {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      const alunos = await response.json();
+      select.innerHTML = '<option value="">Selecione um aluno</option>'; // Limpa o "Carregando..."
+      alunos.forEach(aluno => {
+        select.innerHTML += `<option value="${aluno.id}">${aluno.nome}</option>`;
+      });
+    } else {
+      select.innerHTML = '<option value="">Erro ao carregar alunos</option>';
+    }
+  } catch (error) {
+    console.error("Erro ao buscar alunos:", error);
+    select.innerHTML = '<option value="">Erro de conexão</option>';
+  }
+}
+
+// --- Ponto de Entrada: O DOM foi carregado ---
 document.addEventListener("DOMContentLoaded", function () {
+  
+  // 1. Carrega o nome do usuário
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
   document.getElementById("userName").textContent = nomeUsuario;
 
-  // Simula clique nos menus
+  // 2. Popula o dropdown de alunos
+  carregarAlunos();
+
+  // 3. Adiciona os cliques nos dias da semana
+  document.getElementById("btEditarSegunda").addEventListener("click", () => criarTreinoParaDia("SEGUNDA"));
+  document.getElementById("btEditarTerca").addEventListener("click", () => criarTreinoParaDia("TERCA"));
+  document.getElementById("btEditarQuarta").addEventListener("click", () => criarTreinoParaDia("QUARTA"));
+  document.getElementById("btEditarQuinta").addEventListener("click", () => criarTreinoParaDia("QUINTA"));
+  
+  // (Ajuste no HTML, o seu ID estava errado para sexta)
+  const btSexta = document.querySelector(".btEditarSexta"); // Pega pela classe
+  if(btSexta) {
+    btSexta.addEventListener("click", () => criarTreinoParaDia("SEXTA"));
+  }
+
+  // 4. Lógica de navegação
   document.querySelectorAll('.nav-menu li').forEach(item => {
-    // Note que mudei o parâmetro 'alunos' para 'event', que é o nome correto
     item.addEventListener('click', function(event) {
-        
-        // Pega o destino do atributo 'data-page' do item clicado
         const pagina = event.currentTarget.dataset.page; 
-        
         if (pagina) {
             window.location.href = pagina;
         }
     });
-});
+  });
 
-  // Botão de sair
+  // 5. Botão de sair
   document
     .querySelector(".bi-box-arrow-right")
     .addEventListener("click", function () {
       if (confirm("Deseja sair do sistema?")) {
         localStorage.removeItem("usuarioLogado");
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("instrutorId"); // Limpa tudo
         window.location.href = "login.html";
       }
     });
-});
-
-// Editar exercício ao clicar
-function editExercise(element, nomeAtual = "", detalhes = "") {
-  const [seriesReps] = detalhes.split(" / ");
-  const series = seriesReps ? seriesReps.split(" ")[0] : "";
-  const reps = seriesReps ? seriesReps.split(" ")[2] : "";
-
-  // Criar formulário de edição
-  const form = document.createElement("div");
-  form.className = "exercise-edit-form";
-
-  // Dropdown de exercícios
-  const select = document.createElement("select");
-  select.style.flex = "1";
-  select.innerHTML = listaExercicios
-    .map(
-      (ex) =>
-        `<option value="${ex}" ${
-          ex === nomeAtual ? "selected" : ""
-        }>${ex}</option>`
-    )
-    .join("");
-
-  // Campos de séries e repetições
-  const seriesInput = document.createElement("input");
-  seriesInput.type = "number";
-  seriesInput.placeholder = "S";
-  seriesInput.value = series;
-  seriesInput.style.width = "50px";
-
-  const repsInput = document.createElement("input");
-  repsInput.type = "number";
-  repsInput.placeholder = "R";
-  repsInput.value = reps;
-  repsInput.style.width = "50px";
-
-  // Botão de aplicar (opcional, mas vamos usar o blur)
-  form.appendChild(select);
-  form.appendChild(seriesInput);
-  form.appendChild(repsInput);
-
-  // Substituir conteúdo
-  const oldContent = element.innerHTML;
-  element.innerHTML = "";
-  element.appendChild(form);
-
-  // Focar no dropdown
-  select.focus();
-
-  // Salvar ao sair do foco
-  const salvar = () => {
-    const nome = select.value;
-    const s = seriesInput.value;
-    const r = repsInput.value;
-    let textoDetalhes = "";
-    if (s && r) textoDetalhes = `${s} s / ${r} r`;
-    else if (s || r) textoDetalhes = s ? `${s} s` : `${r} r`;
-
-    element.innerHTML = `
-          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${nome}</span>
-          ${
-            textoDetalhes
-              ? `<span style="margin: 0 8px; font-size: 12px; color: #666;">${textoDetalhes}</span>`
-              : ""
-          }
-        `;
-    element.style.cursor = "pointer";
-    element.onclick = () => editExercise(element, nome, textoDetalhes);
-  };
-
-  // Eventos
-  select.addEventListener("blur", salvar);
-  seriesInput.addEventListener("blur", salvar);
-  repsInput.addEventListener("blur", salvar);
-
-  // Também salvar ao pressionar Enter
-  [select, seriesInput, repsInput].forEach((el) => {
-    el.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") salvar();
-    });
+    
+  // 6. Botão Salvar (agora sem função, pois a ação está nos dias)
+  document.getElementById("criarTreinoForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      alert("Por favor, clique no dia da semana que deseja editar/adicionar.");
   });
-}
-
-// Adicionar novo exercício
-function addExercise(button) {
-  const dayColumn = button.closest(".day-column");
-  const newItem = document.createElement("div");
-  newItem.className = "exercise-item";
-  newItem.style.cursor = "pointer";
-  newItem.innerHTML =
-    '<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Selecione um exercício</span>';
-  newItem.onclick = () => editExercise(newItem);
-  dayColumn.insertBefore(newItem, button);
-}
-
-btEditarSegunda.addEventListener("click", function () {
-  window.location.href = "AdicionarExercicio.html";
-});
-btEditarTerca.addEventListener("click", function () {
-  window.location.href = "AdicionarExercicio.html";
-});
-btEditarQuarta.addEventListener("click", function () {
-  window.location.href = "AdicionarExercicio.html";
-});
-btEditarQuinta.addEventListener("click", function () {
-  window.location.href = "AdicionarExercicio.html";
-});
-btEditarSexta.addEventListener("click", function () {
-  window.location.href = "AdicionarExercicio.html";
 });
