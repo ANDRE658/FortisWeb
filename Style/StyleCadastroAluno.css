@@ -169,3 +169,17 @@ body {
   justify-content: space-between;
   margin-top: 30px;
 }
+
+/* Estilo para o ícone de alternar senha */
+.password-toggle {
+  position: absolute;
+  right: 15px;
+  top: 40px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #6c757d;
+}
+
+.form-group.position-relative {
+  position: relative;
+}

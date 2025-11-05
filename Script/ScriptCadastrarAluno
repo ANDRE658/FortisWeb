@@ -1,70 +1,130 @@
-// Carrega o nome do usuário salvo no localStorage
+// Aguarda o DOM carregar
 document.addEventListener("DOMContentLoaded", function () {
+  // --- Funções de Navegação (do seu código original) ---
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
   document.getElementById("userName").textContent = nomeUsuario;
 
-  // Simula clique nos menus
   document.querySelectorAll(".nav-menu li").forEach((item) => {
-  // Note que mudei o parâmetro 'alunos' para 'event', que é o nome correto
-  item.addEventListener("click", function (event) {
-    // Pega o destino do atributo 'data-page' do item clicado
-    const pagina = event.currentTarget.dataset.page;
-
-    if (pagina) {
-      window.location.href = pagina;
-    }
+    item.addEventListener("click", function (event) {
+      const pagina = event.currentTarget.dataset.page;
+      if (pagina) {
+        window.location.href = pagina;
+      }
+    });
   });
 
-  iconHome.addEventListener("click", function () {
-    window.location.href = "Home.html"; 
+  document.getElementById("iconHome").addEventListener("click", function () {
+    window.location.href = "Home.html";
   });
-});
 
-  // Botão de sair
   document
     .querySelector(".bi-box-arrow-right")
     .addEventListener("click", function () {
       if (confirm("Deseja sair do sistema?")) {
         localStorage.removeItem("usuarioLogado");
+        localStorage.removeItem("jwtToken"); // Limpa o token também
         window.location.href = "Index.html";
       }
     });
 
-  // Formulário de cadastro
+  // --- LÓGICA DE CADASTRO (NOVO) ---
   document
     .getElementById("cadastroAlunoForm")
-    .addEventListener("submit", function (e) {
-      e.preventDefault();
+    .addEventListener("submit", async function (e) {
+      e.preventDefault(); // Impede o envio padrão do formulário
 
+      // 1. Pega o token do localStorage
+      const token = localStorage.getItem("jwtToken");
+
+      // 2. Verifica se o usuário está logado
+      if (!token) {
+        alert("Você não está logado. Redirecionando para a tela de login.");
+        window.location.href = "Index.html";
+        return;
+      }
+
+      // 3. Pega os dados do formulário
       const nome = document.getElementById("nome").value;
       const email = document.getElementById("email").value;
       const cpf = document.getElementById("cpf").value;
-      const nascimento = document.getElementById("nascimento").value;
-      const altura = document.getElementById("altura").value;
-      const peso = document.getElementById("peso").value;
+      const dataNascimento = document.getElementById("nascimento").value;
+      const altura = parseFloat(document.getElementById("altura").value);
+      const peso = parseFloat(document.getElementById("peso").value);
       const cep = document.getElementById("cep").value;
       const cidade = document.getElementById("cidade").value;
       const estado = document.getElementById("estado").value;
       const bairro = document.getElementById("bairro").value;
       const rua = document.getElementById("rua").value;
-      const plano = document.getElementById("plano").value;
 
-      // Simulação de salvamento
-      alert(
-        `Aluno cadastrado com sucesso!\nNome: ${nome}\nEmail: ${email}\nCPF: ${cpf}`
-      );
+      // Nota: O campo "plano" é uma Matrícula, que é um processo separado
+      // na sua API (via MatriculaController).
+      // Vamos focar em salvar o Aluno primeiro.
 
-      // Redireciona para a lista de alunos
-      window.location.href = "alunos.html";
+      // 4. Monta o objeto JSON (Body)
+      // Sua API espera um objeto Aluno, que contém um objeto Endereco aninhado
+      const alunoData = {
+        nome: nome,
+        email: email,
+        CPF: cpf, // O modelo Aluno.java usa "CPF"
+        dataNascimento: dataNascimento,
+        altura: altura,
+        peso: peso,
+        telefone: null, // O formulário não tem, então enviamos null
+        sexo: null, // O formulário não tem, então enviamos null
+        endereco: {
+          rua: rua,
+          cidade: cidade,
+          estado: estado,
+          cep: cep,
+          // O modelo Endereco.java não tem "bairro", então não enviamos
+        },
+      };
+
+      // 5. Envia a requisição (Fetch) para a API
+      try {
+        const response = await fetch("http://localhost:8080/aluno/salvar", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Envia o token JWT no cabeçalho de Autorização
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(alunoData),
+        });
+
+        if (response.status === 201) {
+          // 201 Created
+          // Sucesso!
+          alert("Aluno cadastrado com sucesso!");
+          window.location.href = "Alunos.html"; // Redireciona para a lista
+        } else if (response.status === 403) {
+          // Erro de permissão
+          alert(
+            "Sua sessão expirou ou você não tem permissão. Faça o login novamente."
+          );
+          window.location.href = "Index.html";
+        } else {
+          // Outros erros
+          const errorData = await response.json();
+          alert(
+            "Erro ao cadastrar aluno: " + (errorData.message || response.status)
+          );
+        }
+      } catch (error) {
+        console.error("Erro na requisição:", error);
+        alert("Não foi possível conectar à API. Verifique o console.");
+      }
     });
 
   // Botão "Criar treino Aluno"
-  document.querySelector(".btn-create").addEventListener("click", function () {
-    alert("Você deseja criar um treino?");
-  });
-
-  //Carregar a tela de criação de treino ao clicar no botão
-  document.getElementById("btCriarTreino").addEventListener("click", function () {
-    window.location.href = "CadastroTreino.html";
-  });
+  document
+    .getElementById("btCriarTreino")
+    .addEventListener("click", function () {
+      // Salva os dados do formulário no localStorage para usar na próxima tela
+      const nome = document.getElementById("nome").value;
+      alert(
+        `Redirecionando para criar treino para o aluno: ${nome || "Novo Aluno"}`
+      );
+      window.location.href = "CadastroTreino.html";
+    });
 });
