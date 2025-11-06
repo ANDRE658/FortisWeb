@@ -1,6 +1,11 @@
 // Aguarda o DOM carregar
 document.addEventListener("DOMContentLoaded", function () {
-  // --- Funções de Navegação (do seu código original) ---
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const alunoId = urlParams.get("id"); 
+  const modoEdicao = alunoId !== null;
+
+  // --- Funções de Navegação ---
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
   document.getElementById("userName").textContent = nomeUsuario;
 
@@ -22,53 +27,131 @@ document.addEventListener("DOMContentLoaded", function () {
     .addEventListener("click", function () {
       if (confirm("Deseja sair do sistema?")) {
         localStorage.removeItem("usuarioLogado");
-        localStorage.removeItem("jwtToken"); // Limpa o token também
+        localStorage.removeItem("jwtToken"); 
+        localStorage.removeItem("instrutorId");
         window.location.href = "Index.html";
       }
     });
 
-  // --- LÓGICA DE CADASTRO (CORRIGIDA PARA SEU NOVO HTML) ---
+  // --- FUNÇÃO PARA CARREGAR DADOS (MODO EDIÇÃO) ---
+  async function carregarDadosDoAluno() {
+    if (!modoEdicao) return; 
+
+    document.querySelector(".page-title").textContent = "Editar Aluno";
+    document.querySelector(".btn-save").textContent = "ATUALIZAR";
+    
+    document.getElementById("cpf").disabled = true; 
+    
+    // --- INÍCIO DA CORREÇÃO DO BUG ---
+    const senhaInput = document.getElementById("senhaProvisoria");
+    const senhaGroup = senhaInput.closest(".form-group");
+    if (senhaGroup) {
+      senhaGroup.style.display = "none"; // 1. Esconde o campo de senha
+      senhaInput.removeAttribute("required"); // 2. Remove a validação
+    }
+    // --- FIM DA CORREÇÃO DO BUG ---
+
+    const token = localStorage.getItem("jwtToken");
+    if (!token) {
+      alert("Sessão expirada. Faça o login novamente.");
+      window.location.href = "Index.html";
+      return;
+    }
+
+    try {
+      // (O restante da função de carregar dados permanece igual...)
+      const response = await fetch(
+        `http://localhost:8080/aluno/buscar/${alunoId}`,
+        {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const aluno = await response.json();
+        
+        document.getElementById("nome").value = aluno.nome;
+        document.getElementById("email").value = aluno.email;
+        document.getElementById("cpf").value = aluno.cpf;
+        document.getElementById("telefone").value = aluno.telefone;
+        document.getElementById("sexo").value = aluno.sexo;
+        
+        if (aluno.dataNascimento) {
+            document.getElementById("nascimento").value = new Date(aluno.dataNascimento).toISOString().split('T')[0];
+        }
+        document.getElementById("altura").value = aluno.altura;
+        document.getElementById("peso").value = aluno.peso;
+
+        if (aluno.endereco) {
+          document.getElementById("rua").value = aluno.endereco.rua;
+          document.getElementById("cidade").value = aluno.endereco.cidade;
+          document.getElementById("estado").value = aluno.endereco.estado;
+          document.getElementById("cep").value = aluno.endereco.cep;
+          // Preenche o bairro do HTML (mesmo que Endereco.java não tenha)
+          document.getElementById("bairro").value = aluno.endereco.bairro || "";
+        }
+
+      } else {
+        alert("Erro ao buscar dados do aluno. Redirecionando para a lista.");
+        window.location.href = "Alunos.html";
+      }
+    } catch (error) {
+      console.error("Erro de rede ao carregar aluno:", error);
+    }
+  }
+
+  
+
+
+  // --- LÓGICA DE SALVAR (CRIAR E ATUALIZAR) ---
   document
     .getElementById("cadastroAlunoForm")
     .addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const token = localStorage.getItem("jwtToken");
-      if (!token) {
-        alert("Você não está logado. Redirecionando para a tela de login.");
-        window.location.href = "Index.html";
-        return;
-      }
-
-      // 3. Pega os dados do seu novo formulário
-      const alunoData = {
-        // Dados do Aluno
-        nome: document.getElementById("nome").value,
-        email: document.getElementById("email").value,
-        CPF: document.getElementById("cpf").value,
-        telefone: document.getElementById("telefone").value,
-        sexo: document.getElementById("sexo").value,
-        dataNascimento: document.getElementById("nascimento").value,
-        altura: parseFloat(document.getElementById("altura").value),
-        peso: parseFloat(document.getElementById("peso").value),
-
-        // Dados do Endereco
-        endereco: {
-          rua: document.getElementById("rua").value,
-          cidade: document.getElementById("cidade").value,
-          estado: document.getElementById("estado").value,
-          cep: document.getElementById("cep").value,
-          // O campo 'bairro' do seu HTML não está no Endereco.java, então o ignoramos.
-        },
-
-        // Dado de Senha
-        senha: document.getElementById("senhaProvisoria").value,
-      };
-
-      // 4. Envia a requisição (Fetch) para a API
+      e.preventDefault(); 
+      
       try {
-        const response = await fetch("http://localhost:8080/aluno/salvar", {
-          method: "POST",
+        const token = localStorage.getItem("jwtToken");
+        if (!token) {
+          alert("Você não está logado.");
+          window.location.href = "Index.html";
+          return;
+        }
+
+        // 1. Coleta de Dados
+        const alunoData = {
+          nome: document.getElementById("nome").value,
+          email: document.getElementById("email").value,
+          cpf: document.getElementById("cpf").value, 
+          telefone: document.getElementById("telefone").value,
+          sexo: document.getElementById("sexo").value,
+          dataNascimento: document.getElementById("nascimento").value, 
+          altura: parseFloat(document.getElementById("altura").value),
+          peso: parseFloat(document.getElementById("peso").value),
+          endereco: {
+            rua: document.getElementById("rua").value,
+            cidade: document.getElementById("cidade").value,
+            estado: document.getElementById("estado").value,
+            cep: document.getElementById("cep").value,
+            // O backend (Endereco.java) não tem 'bairro', então não enviamos.
+            // Se o backend for atualizado para ter "bairro", adicione-o aqui.
+          },
+        };
+
+        // Adiciona a senha APENAS se for modo de cadastro
+        if (!modoEdicao) {
+          alunoData.senha = document.getElementById("senhaProvisoria").value;
+        }
+
+        // 2. Define o método e a URL
+        const metodo = modoEdicao ? "PUT" : "POST";
+        const url = modoEdicao
+          ? `http://localhost:8080/aluno/atualizar/${alunoId}`
+          : "http://localhost:8080/aluno/salvar";
+
+        // 3. Envia a Requisição
+        const response = await fetch(url, {
+          method: metodo,
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -76,38 +159,25 @@ document.addEventListener("DOMContentLoaded", function () {
           body: JSON.stringify(alunoData),
         });
 
-        if (response.status === 201) {
-          // 201 Created
-          alert("Aluno cadastrado com sucesso!");
+        // 4. Trata a Resposta
+        if (response.status === 201 || response.status === 200) {
+          alert(
+            modoEdicao
+              ? "Aluno atualizado com sucesso!"
+              : "Aluno cadastrado com sucesso!"
+          );
           window.location.href = "Alunos.html";
-        } else if (response.status === 403) {
-          alert(
-            "Sua sessão expirou ou você não tem permissão. Faça o login novamente."
-          );
-          window.location.href = "Index.html";
-        } else if (response.status === 400) {
-          alert(
-            "Erro ao cadastrar aluno: Verifique se todos os campos (especialmente a senha) foram preenchidos."
-          );
         } else {
-          // Captura outros erros (como o 'usuario_role_check' se ainda ocorrer)
-          const errorText = await response.text(); // Pega o erro
-          console.error("Erro da API:", errorText);
-          alert("Erro ao cadastrar aluno. Verifique o console para detalhes.");
+           const errorText = await response.text();
+           console.error("Erro da API:", errorText);
+           alert("Erro ao salvar. Verifique o console. Código: " + response.status);
         }
       } catch (error) {
-        console.error("Erro na requisição:", error);
-        alert(
-          "Não foi possível conectar à API. Verifique o console e se o backend está rodando."
-        );
+        console.error("Erro fatal no script de cadastro:", error);
+        alert("Um erro ocorreu no formulário. Verifique o console (F12) para detalhes.");
       }
     });
 
-  // Botão "Criar treino Aluno"
-  document
-    .getElementById("btCriarTreino")
-    .addEventListener("click", function () {
-      alert("Redirecionando para criar treino...");
-      window.location.href = "CadastroTreino.html";
-    });
+  // --- INICIALIZAÇÃO DA PÁGINA ---
+  carregarDadosDoAluno(); 
 });

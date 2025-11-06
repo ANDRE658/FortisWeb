@@ -129,12 +129,26 @@ document.addEventListener("DOMContentLoaded", function () {
     window.location.href = "CadastroAluno.html";
   });
 
+  // --- INÍCIO DA ATUALIZAÇÃO ---
+  // 8. Lógica de edição (listener delegado ATUALIZADO)
+  document.querySelector("tbody").addEventListener("click", function(e) {
+    // Verifica se o que foi clicado é o ícone de lápis
+    if (e.target && e.target.classList.contains('action-icon')) {
+      // Pega o ID do aluno que colocamos no 'data-aluno-id'
+      const alunoId = e.target.getAttribute('data-aluno-id');
+      
+      // Redireciona para a tela de cadastro, passando o ID na URL
+      window.location.href = `CadastroAluno.html?id=${alunoId}`;
+    }
+  });
+  // --- FIM DA ATUALIZAÇÃO ---
+
   // 8. Lógica de edição (do seu código original, mas agora em um listener dinâmico)
   // Como os ícones são criados dinamicamente, temos que usar um listener "delegado"
   document.querySelector("tbody").addEventListener("click", function(e) {
     if (e.target && e.target.classList.contains('action-icon')) {
       const alunoId = e.target.getAttribute('data-aluno-id');
-      alert(`Editando aluno com ID: ${alunoId}. (Implementação futura)`);
+      alert(`Editando aluno com ID: ${alunoId}.`);
       // Aqui você pode redirecionar para a tela de cadastro passando o ID
       // window.location.href = `CadastroAluno.html?id=${alunoId}`;
     }
