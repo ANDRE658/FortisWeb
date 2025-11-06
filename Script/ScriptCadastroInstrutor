@@ -1,0 +1,42 @@
+document.getElementById('cadastroInstrutorForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      // 1. Coleta de Dados
+      // (Nota: O Endereco.java não tem "bairro", então não o enviamos)
+      const instrutorData = {
+        nome: document.getElementById('nome').value,
+        cpf: document.getElementById('cpf').value,
+        email: document.getElementById('email').value,
+        dataNascimento: document.getElementById('nascimento').value,
+        telefone: document.getElementById('telefone').value,
+        sexo: document.getElementById('sexo').value,
+        senha: document.getElementById('senha').value,
+        endereco: {
+          cep: document.getElementById('cep').value,
+          cidade: document.getElementById('cidade').value,
+          estado: document.getElementById('estado').value,
+          rua: document.getElementById('rua').value
+          // 'bairro' não está no Endereco.java
+        }
+      };
+      
+      // 2. Envio para a API
+      try {
+        const response = await fetch('http://localhost:8080/instrutor/salvar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(instrutorData)
+        });
+
+        if (response.status === 201) { // 201 Created
+          alert('Instrutor cadastrado com sucesso! Você já pode fazer o login.');
+          window.location.href = 'Index.html';
+        } else {
+          // Captura erros (ex: email duplicado, senha faltando)
+          alert('Erro ao cadastrar instrutor. Verifique os dados. Status: ' + response.status);
+        }
+      } catch (error) {
+        console.error('Erro na requisição:', error);
+        alert('Não foi possível conectar à API. Verifique o console (F12).');
+      }
+    });
