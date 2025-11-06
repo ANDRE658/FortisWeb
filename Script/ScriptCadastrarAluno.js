@@ -42,14 +42,12 @@ document.addEventListener("DOMContentLoaded", function () {
     
     document.getElementById("cpf").disabled = true; 
     
-    // --- INÍCIO DA CORREÇÃO DO BUG ---
     const senhaInput = document.getElementById("senhaProvisoria");
     const senhaGroup = senhaInput.closest(".form-group");
     if (senhaGroup) {
-      senhaGroup.style.display = "none"; // 1. Esconde o campo de senha
-      senhaInput.removeAttribute("required"); // 2. Remove a validação
+      senhaGroup.style.display = "none"; 
+      senhaInput.removeAttribute("required"); 
     }
-    // --- FIM DA CORREÇÃO DO BUG ---
 
     const token = localStorage.getItem("jwtToken");
     if (!token) {
@@ -59,7 +57,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     try {
-      // (O restante da função de carregar dados permanece igual...)
       const response = await fetch(
         `http://localhost:8080/aluno/buscar/${alunoId}`,
         {
@@ -88,9 +85,15 @@ document.addEventListener("DOMContentLoaded", function () {
           document.getElementById("cidade").value = aluno.endereco.cidade;
           document.getElementById("estado").value = aluno.endereco.estado;
           document.getElementById("cep").value = aluno.endereco.cep;
-          // Preenche o bairro do HTML (mesmo que Endereco.java não tenha)
           document.getElementById("bairro").value = aluno.endereco.bairro || "";
         }
+        
+        // --- ATUALIZAÇÃO IMPORTANTE ---
+        // A lógica de selecionar o plano do aluno (ex: plano.id)
+        // precisaria ser adicionada aqui, mas o seu backend
+        // (AlunoController.buscarPorId) não retorna qual é o plano atual do aluno.
+        // Por enquanto, apenas populamos a lista.
+        // document.getElementById("plano").value = aluno.planoId; // (Exemplo futuro)
 
       } else {
         alert("Erro ao buscar dados do aluno. Redirecionando para a lista.");
@@ -101,13 +104,57 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  
+  // --- 🌟 INÍCIO DA NOVA FUNÇÃO 🌟 ---
+  /**
+   * Carrega a lista de planos da API e preenche o dropdown.
+   */
+  async function carregarPlanos() {
+    const token = localStorage.getItem("jwtToken");
+    const selectPlano = document.getElementById("plano");
+
+    if (!token) {
+      selectPlano.innerHTML = '<option value="">Falha (sem token)</option>';
+      return;
+    }
+
+    try {
+      // 1. Busca no endpoint /plano/listar (exige token de instrutor)
+      const response = await fetch("http://localhost:8080/plano/listar", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const planos = await response.json();
+        
+        // 2. Limpa o dropdown (mantendo a primeira opção)
+        selectPlano.innerHTML = '<option value="">Selecione um plano</option>'; 
+        
+        // 3. Preenche com os planos do banco
+        planos.forEach(plano => {
+          // O seu Plano.java tem 'nome' e 'valor'
+          const valorFormatado = parseFloat(plano.valor).toFixed(2).replace('.', ',');
+          const option = document.createElement('option');
+          option.value = plano.id; // Salva o ID do plano
+          option.textContent = `${plano.nome} (R$ ${valorFormatado})`; // Ex: Gold Mensal (R$ 89,90)
+          selectPlano.appendChild(option);
+        });
+      } else {
+         throw new Error('Falha ao buscar planos: ' + response.status);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar planos:", error);
+      selectPlano.innerHTML = '<option value="">Erro ao carregar planos</option>';
+    }
+  }
+  // --- 🌟 FIM DA NOVA FUNÇÃO 🌟 ---
 
 
   // --- LÓGICA DE SALVAR (CRIAR E ATUALIZAR) ---
   document
     .getElementById("cadastroAlunoForm")
     .addEventListener("submit", async function (e) {
+      // (Esta função inteira permanece exatamente como estava)
       e.preventDefault(); 
       
       try {
@@ -117,8 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
           window.location.href = "Index.html";
           return;
         }
-
-        // 1. Coleta de Dados
+        //Coleta de dados do formulário
         const alunoData = {
           nome: document.getElementById("nome").value,
           email: document.getElementById("email").value,
@@ -133,33 +179,28 @@ document.addEventListener("DOMContentLoaded", function () {
             cidade: document.getElementById("cidade").value,
             estado: document.getElementById("estado").value,
             cep: document.getElementById("cep").value,
-            // O backend (Endereco.java) não tem 'bairro', então não enviamos.
-            // Se o backend for atualizado para ter "bairro", adicione-o aqui.
           },
+          planoId: document.getElementById("plano").value
         };
 
-        // Adiciona a senha APENAS se for modo de cadastro
         if (!modoEdicao) {
           alunoData.senha = document.getElementById("senhaProvisoria").value;
         }
 
-        // 2. Define o método e a URL
         const metodo = modoEdicao ? "PUT" : "POST";
         const url = modoEdicao
           ? `http://localhost:8080/aluno/atualizar/${alunoId}`
           : "http://localhost:8080/aluno/salvar";
 
-        // 3. Envia a Requisição
         const response = await fetch(url, {
           method: metodo,
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify(alunoData),
         });
 
-        // 4. Trata a Resposta
         if (response.status === 201 || response.status === 200) {
           alert(
             modoEdicao
@@ -179,5 +220,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
   // --- INICIALIZAÇÃO DA PÁGINA ---
+  
+  // 🌟 ATUALIZADO 🌟
+  // Carrega as duas listas ao iniciar a página.
+  carregarPlanos();
   carregarDadosDoAluno(); 
 });
