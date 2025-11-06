@@ -62,3 +62,8 @@ document.addEventListener("DOMContentLoaded", function () {
     window.location.href = "Suporte.html";
   });
 });
+
+// Redirecionar para criar treino
+document.getElementById('btnCriarTreino')?.addEventListener('click', function() {
+    window.location.href = 'CadastroTreino.html';
+});

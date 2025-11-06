@@ -54,7 +54,9 @@
             <h1 class="page-title">Gerenciamento de Treinos</h1>
 
             <div class="actions-bar">
-                <div></div> <!-- Espaço vazio, sem botão de cadastro na imagem -->
+                <!-- Botão "+ CRIAR TREINO" -->
+                <button type="button" class="btn btn-add" id="btnCriarTreino">+ CRIAR TREINO</button>
+                <!-- Campo de busca -->
                 <input type="text" class="search-input" placeholder="Buscar treino...">
             </div>
 
@@ -69,126 +71,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>Treino superiores</td>
-                            <td><span class="status-ativo">Ativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon" id="iconEditar"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>Experimental</td>
-                            <td><span class="status-inativo">Inativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox">
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>Treino Anual</td>
-                            <td><span class="status-inativo">Inativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox">
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>Treino Ombro</td>
-                            <td><span class="status-inativo">Inativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox">
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>Treino B - Pernas</td>
-                            <td><span class="status-ativo">Ativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>Treino Iniciantes</td>
-                            <td><span class="status-ativo">Ativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>Trimestral</td>
-                            <td><span class="status-ativo">Ativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>PPL + Upper/Lower</td>
-                            <td><span class="status-ativo">Ativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>Upper + Lower 3x</td>
-                            <td><span class="status-ativo">Ativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Fulano da Silva</td>
-                            <td>ARCNF</td>
-                            <td><span class="status-ativo">Ativo</span></td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="bi bi-pencil action-icon"></i>
-                            </td>
-                        </tr>
+                        <!-- Os dados podem ser carregados dinamicamente via JavaScript -->
                     </tbody>
                 </table>
             </div>

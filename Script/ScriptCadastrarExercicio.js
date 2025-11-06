@@ -1,3 +1,44 @@
+// --- INÍCIO DA CORREÇÃO: Função para carregar exercícios da API ---
+async function carregarExerciciosAPI() {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+        alert("Sessão expirada. Faça o login.");
+        window.location.href = "Index.html";
+        return;
+    }
+
+    try {
+        // 1. Busca os exercícios cadastrados
+        const response = await fetch('http://localhost:8080/exercicio/listar', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            console.error("Não foi possível listar os exercícios da API.");
+            return;
+        }
+
+        const exercicios = await response.json();
+        
+        // 2. Encontra todos os <select> na tabela
+        const selects = document.querySelectorAll(".table-row select");
+        
+        // 3. Popula cada <select> com os exercícios
+        selects.forEach(select => {
+            select.innerHTML = '<option value="">Selecione um exercício</option>'; // Limpa o "Carregando..."
+            exercicios.forEach(ex => {
+                // O 'value' será o ID, e o texto será o Nome
+                select.innerHTML += `<option value="${ex.id}">${ex.nome}</option>`; 
+            });
+        });
+
+    } catch (error) {
+        console.error("Erro ao carregar exercícios da API:", error);
+    }
+}
+// --- FIM DA CORREÇÃO ---
+
+
 // --- Ponto de Entrada: O DOM foi carregado ---
 document.addEventListener("DOMContentLoaded", function () {
   
@@ -18,7 +59,14 @@ document.addEventListener("DOMContentLoaded", function () {
   document.querySelector(".btn-day").textContent = diaSemana.toUpperCase();
   // Desabilita os campos que não precisam ser editados
   document.getElementById("aluno").disabled = true;
-  document.getElementById("nomeTreino").disabled = true;
+  // O ID "nomeTreino" no seu AdicionarExercicio.html é um <select>, vamos apenas desabilitá-lo
+  if (document.getElementById("nomeTreino")) {
+      document.getElementById("nomeTreino").disabled = true;
+  }
+
+  // --- INÍCIO DA CORREÇÃO: Chama a função para popular os dropdowns ---
+  carregarExerciciosAPI();
+  // --- FIM DA CORREÇÃO ---
 
   // 3. Funções de Navegação
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
@@ -60,55 +108,41 @@ document.addEventListener("DOMContentLoaded", function () {
       const rows = document.querySelectorAll(".table-row");
       const promessas = []; // Array para salvar todas as requisições
 
-      rows.forEach((row) => {
-        const nomeExercicio = row.querySelector('input[type="text"]').value;
-        const series = row.querySelector(".input-serie").value;
-        const rep = row.querySelector(".input-rep").value;
+      for (const row of rows) {
+        // --- INÍCIO DA CORREÇÃO: Ler dados do <select> e inputs ---
+        const selectExercicio = row.querySelector('select');
+        const exercicioId = selectExercicio ? selectExercicio.value : null;
+        const seriesInput = row.querySelector(".input-serie");
+        const series = seriesInput ? seriesInput.value : null;
+        const repInput = row.querySelector(".input-rep");
+        const rep = repInput ? repInput.value : null;
+        // --- FIM DA CORREÇÃO ---
 
-        // Só salva se o nome foi preenchido
-        if (nomeExercicio && series && rep) {
+        // Só salva se o ID, series e rep foram preenchidos
+        if (exercicioId && series && rep) {
           
-          // O backend DTO
-          // espera (exercicioId, series, repeticoes, carga, tempoDescansoSegundos)
+          // O backend DTO (ExercicioDTO) espera (id, nome, series, repeticoes)
+          // Mas o Service (ExercicioService) espera o DTO e o treinoId
+          // E o DTO que o *ItemTreinoRequestDTO* (que você parece estar usando) espera:
+          // (exercicioId, series, repeticoes, carga, tempoDescansoSegundos)
           
-          // **** IMPORTANTE ****
-          // Seu backend espera um 'exercicioId' (Long), mas seu frontend
-          // está pegando o 'nome' (String).
-          // Para isso funcionar, seu backend (ExercicioService) precisaria
-          // buscar o ID pelo nome, ou o frontend precisaria de um dropdown de exercícios.
-          
-          // *Simplificação por agora:* Vamos assumir que o backend foi
-          // ajustado para aceitar o NOME do exercício, ou que o DTO foi
-          // mudado para aceitar 'exercicioNome' (String).
-          
-          // *Solução mais realista (mas complexa):* Teríamos que
-          // primeiro fazer um GET /exercicio/listar, popular um
-          // <select> na tabela e pegar o ID dele.
-          
-          // *VAMOS ASSUMIR A LÓGICA DO SEU BACKEND:*
-          // O backend (ItemTreinoRequestDTO) espera 'exercicioId' (Long).
-          // O frontend (AdicionarExercicio.html) só tem o NOME (String).
-          // **Isso não vai funcionar.**
-          
-          // *** ALTERNATIVA TEMPORÁRIA ***
-          // Vamos assumir que o usuário digitou o ID do exercício no campo nome.
-          const exercicioIdNum = parseInt(nomeExercicio);
-          
-          if (isNaN(exercicioIdNum)) {
-             alert(`Erro: "${nomeExercicio}" não é um ID de exercício válido. Por favor, digite o ID numérico do exercício.`);
-             throw new Error("ID de exercício inválido.");
-          }
-
+          // Vamos usar o DTO que o seu JS estava tentando montar:
           const itemData = {
-            exercicioId: exercicioIdNum,
+            id: null, // O ID é do ItemTreino, não do exercício
+            exercicioId: parseInt(exercicioId), // ID do exercício (Ex: 1 = Supino)
             series: parseInt(series),
             repeticoes: rep.toString(), // Repetições é String (ex: "10-12")
             carga: 0, // Campo não existe no form, enviamos 0
             tempoDescansoSegundos: 60 // Campo não existe, enviamos 60
           };
+          
+          // --- INÍCIO DA CORREÇÃO: Corrigir o endpoint da API ---
+          // O endpoint correto é /exercicio/salvar/{treinoId}
+          const url = `http://localhost:8080/exercicio/salvar/${treinoId}`;
+          // --- FIM DA CORREÇÃO ---
 
           // Adiciona a promessa de 'fetch' ao array
-          promessas.push(fetch(`http://localhost:8080/treino/${treinoId}/exercicios`, {
+          promessas.push(fetch(url, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -117,13 +151,22 @@ document.addEventListener("DOMContentLoaded", function () {
             body: JSON.stringify(itemData)
           }));
         }
-      });
+      }
       
       // 6. Executa todas as promessas de salvamento
       try {
-        await Promise.all(promessas);
-        alert("Exercícios salvos no treino com sucesso!");
-        window.location.href = "CadastroTreino.html"; // Volta para a tela "mãe"
+        const responses = await Promise.all(promessas);
+
+        // Verifica se alguma das requisições falhou
+        const falhou = responses.some(res => !res.ok);
+
+        if (falhou) {
+            alert("Alguns exercícios não puderam ser salvos. Verifique o console.");
+        } else {
+            alert("Exercícios salvos no treino com sucesso!");
+            window.location.href = "CadastroTreino.html"; // Volta para a tela "mãe"
+        }
+
       } catch (error) {
          console.error("Erro ao salvar exercícios:", error);
          alert("Falha ao salvar um ou mais exercícios. Verifique o console.");
