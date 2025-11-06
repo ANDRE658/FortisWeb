@@ -8,19 +8,18 @@ document.getElementById('cadastroInstrutorForm').addEventListener('submit', asyn
         cpf: document.getElementById('cpf').value,
         email: document.getElementById('email').value,
         dataNascimento: document.getElementById('nascimento').value,
-        telefone: document.getElementById('telefone').value,
-        sexo: document.getElementById('sexo').value,
-        senha: document.getElementById('senha').value,
+        telefone: document.getElementById('telefone').value, // Novo
+        sexo: document.getElementById('sexo').value,       // Novo
+        senha: document.getElementById('senha').value,       // Novo
         endereco: {
           cep: document.getElementById('cep').value,
           cidade: document.getElementById('cidade').value,
           estado: document.getElementById('estado').value,
           rua: document.getElementById('rua').value
-          // 'bairro' não está no Endereco.java
         }
       };
       
-      // 2. Envio para a API
+      // 2. Envio para a API (no endpoint que vamos criar)
       try {
         const response = await fetch('http://localhost:8080/instrutor/salvar', {
           method: 'POST',

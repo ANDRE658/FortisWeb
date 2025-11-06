@@ -1,0 +1,40 @@
+// Carrega o nome do usuário
+    document.addEventListener('DOMContentLoaded', function() {
+      const nomeUsuario = localStorage.getItem('usuarioLogado') || 'Instrutor';
+      document.getElementById('userName').textContent = nomeUsuario;
+
+      // Botão de sair
+      document.querySelector('.bi-box-arrow-right').addEventListener('click', function() {
+        if (confirm("Deseja sair do sistema?")) {
+          localStorage.removeItem('usuarioLogado');
+          window.location.href = 'login.html';
+        }
+      });
+
+      // Switches de status
+      document.querySelectorAll('.switch input').forEach(switchInput => {
+        switchInput.addEventListener('change', function() {
+          const row = this.closest('tr');
+          const statusCell = row.querySelector('td:nth-child(3) span');
+          if (this.checked) {
+            statusCell.textContent = 'Ativo';
+            statusCell.className = 'status-ativo';
+          } else {
+            statusCell.textContent = 'Inativo';
+            statusCell.className = 'status-inativo';
+          }
+        });
+      });
+
+      document.getElementById('btCadastrarInstrutor').addEventListener('click', function() {
+        window.location.href = 'Cadastroinstrutor.html';
+      });
+
+      // Ícones de edição
+      document.querySelectorAll('.action-icon').forEach(icon => {
+        icon.addEventListener('click', function() {
+          const nome = this.closest('tr').querySelector('td:first-child').textContent;
+          alert(`Editando instrutor: ${nome}\n(Implementar tela de edição)`);
+        });
+      });
+    });
