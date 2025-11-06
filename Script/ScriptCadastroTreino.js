@@ -10,10 +10,7 @@ async function criarTreinoParaDia(diaSemana) {
     alert("Por favor, selecione um aluno.");
     return;
   }
-  if (!nomeTreino) {
-    alert("Por favor, digite um nome para o treino (Ex: Upper/Lower).");
-    return;
-  }
+  
   if (!token || !instrutorId) {
     alert(
       "Sessão expirada ou instrutor não encontrado. Faça o login novamente."

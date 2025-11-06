@@ -104,6 +104,47 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
+      for (const row of rows) {
+        // --- INÍCIO DA CORREÇÃO ---
+        const selectExercicio = row.querySelector('select');
+        const exercicioId = selectExercicio ? selectExercicio.value : null; // Pega o ID (valor)
+        
+        const seriesInput = row.querySelector(".input-serie");
+        const series = seriesInput ? seriesInput.value : null;
+        
+        const repInput = row.querySelector(".input-rep");
+        const rep = repInput ? repInput.value : null;
+
+        // Só salva se o ID (do catálogo) foi preenchido
+        if (exercicioId && series && rep) {
+          
+          // O backend (ItemTreinoRequestDTO) espera:
+          // exercicioId, series, repeticoes, carga, tempoDescansoSegundos
+          
+          const itemData = {
+            exercicioId: parseInt(exercicioId), // ID do exercício (Ex: 1 = Supino)
+            series: parseInt(series),
+            repeticoes: rep.toString(), // Repetições é String (ex: "10-12")
+            carga: 0, // (Seu HTML não tem, então 0)
+            tempoDescansoSegundos: 60 // (Seu HTML não tem, então 60)
+          };
+
+          // Endpoint CORRIGIDO para o novo ItemTreinoController
+          const url = `http://localhost:8080/item-treino/salvar/${treinoId}`;
+          // --- FIM DA CORREÇÃO ---
+
+          // Adiciona a promessa de 'fetch' ao array
+          promessas.push(fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(itemData)
+          }));
+        }
+      }
+
       // 5. Pega todos os exercícios da tabela
       const rows = document.querySelectorAll(".table-row");
       const promessas = []; // Array para salvar todas as requisições
