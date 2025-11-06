@@ -49,6 +49,58 @@
       cursor: pointer;
     }
 
+    .main-container {
+      display: flex;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #000055;
+      color: white;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .user-profile {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .user-profile img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid #00BFFF;
+      object-fit: cover;
+    }
+
+    .user-name {
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .nav-menu {
+      list-style: none;
+      padding: 0;
+      width: 100%;
+    }
+
+    .nav-menu li {
+      padding: 12px 25px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-size: 16px;
+    }
+
+    .nav-menu li:hover {
+      background-color: #00008B;
+    }
+
     .content {
       flex: 1;
       background-color: #f5f0e1;
@@ -73,6 +125,7 @@
     .form-group {
       flex: 1;
       min-width: 200px;
+      position: relative;
     }
 
     .form-label {
@@ -86,6 +139,15 @@
       border: 1px solid #ddd;
       padding: 10px 15px;
       font-size: 16px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 25px;
+      top: 42px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: #6c757d;
     }
 
     .btn-cancel {
@@ -128,71 +190,104 @@
     <i class="bi bi-box-arrow-right navbar-icon" title="Sair"></i>
   </div>
 
-  <!-- Conteúdo Principal -->
-  <div class="content">
-    <h1 class="page-title">Cadastro de Instrutor</h1>
+  <!-- Container Principal -->
+  <div class="main-container">
 
-    <form id="cadastroInstrutorForm">
-
-      <!-- Linha 1: Nome e CPF -->
-      <div class="form-row">
-        <div class="form-group">
-          <label for="nome" class="form-label">Nome</label>
-          <input type="text" class="form-control" id="nome" placeholder="Digite o nome completo" required />
-        </div>
-        <div class="form-group">
-          <label for="cpf" class="form-label">CPF</label>
-          <input type="text" class="form-control" id="cpf" placeholder="000.000.000-00" required />
-        </div>
+    <!-- Menu Lateral -->
+    <div class="sidebar">
+      <div class="user-profile">
+        <img src="Assets/Images/FotoUsuario.png" alt="Foto do Usuário" id="fotoUsario">
+        <div class="user-name" id="userName">Carregando...</div>
       </div>
 
-      <!-- Linha 2: Email e Nascimento -->
-      <div class="form-row">
-        <div class="form-group">
-          <label for="email" class="form-label">Email</label>
-          <input type="email" class="form-control" id="email" placeholder="seu@email.com" required />
-        </div>
-        <div class="form-group">
-          <label for="nascimento" class="form-label">Nascimento</label>
-          <input type="date" class="form-control" id="nascimento" required />
-        </div>
-      </div>
+      <ul class="nav-menu">
+        <li data-page="Alunos.html">Alunos</li>
+        <li data-page="Planos.html">Planos</li>
+        <li data-page="Treinos.html">Treinos</li>
+        <li data-page="Exercicios.html">Exercícios</li>
+        <li data-page="Relatorios.html">Relatórios</li>
+      </ul>
+    </div>
 
-      <!-- Linha 3: CEP, Cidade, Estado -->
-      <div class="form-row">
-        <div class="form-group">
-          <label for="cep" class="form-label">CEP</label>
-          <input type="text" class="form-control" id="cep" placeholder="00000-000" required />
-        </div>
-        <div class="form-group">
-          <label for="cidade" class="form-label">Cidade</label>
-          <input type="text" class="form-control" id="cidade" placeholder="São Paulo" required />
-        </div>
-        <div class="form-group">
-          <label for="estado" class="form-label">Estado</label>
-          <input type="text" class="form-control" id="estado" placeholder="SP" maxlength="2" required />
-        </div>
-      </div>
+    <!-- Conteúdo Principal -->
+    <div class="content">
+      <h1 class="page-title">Cadastro de Instrutor</h1>
 
-      <!-- Linha 4: Bairro e Rua -->
-      <div class="form-row">
-        <div class="form-group">
-          <label for="bairro" class="form-label">Bairro</label>
-          <input type="text" class="form-control" id="bairro" placeholder="Jardim Paulista" required />
-        </div>
-        <div class="form-group">
-          <label for="rua" class="form-label">Rua</label>
-          <input type="text" class="form-control" id="rua" placeholder="Av. Paulista" required />
-        </div>
-      </div>
+      <form id="cadastroInstrutorForm">
 
-      <!-- Botões Cancelar e Salvar -->
-      <div class="button-row">
-        <button type="button" class="btn btn-cancel" onclick="window.location.href='Index.html'">CANCELAR</button>
-        <button type="submit" class="btn btn-save">SALVAR</button>
-      </div>
+        <!-- Linha 1: Nome e CPF -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nome" class="form-label">Nome</label>
+            <input type="text" class="form-control" id="nome" placeholder="Digite o nome completo" required />
+          </div>
+          <div class="form-group">
+            <label for="cpf" class="form-label">CPF</label>
+            <input type="text" class="form-control" id="cpf" placeholder="000.000.000-00" required />
+          </div>
+        </div>
 
-    </form>
+        <!-- Linha 2: Email e Senha Provisória -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" placeholder="seu@email.com" required />
+          </div>
+          <div class="form-group">
+            <label for="senhaProvisoria" class="form-label">Senha Provisória</label>
+            <input type="password" class="form-control" id="senhaProvisoria" placeholder="••••••••" required />
+            <span class="password-toggle" id="toggleSenha">
+              <i class="bi bi-eye"></i>
+            </span>
+          </div>
+        </div>
+
+        <!-- Linha 3: Nascimento -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nascimento" class="form-label">Nascimento</label>
+            <input type="date" class="form-control" id="nascimento" required />
+          </div>
+          <div class="form-group"></div> <!-- Espaço vazio para manter o alinhamento -->
+        </div>
+
+        <!-- Linha 4: CEP, Cidade, Estado -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cep" class="form-label">CEP</label>
+            <input type="text" class="form-control" id="cep" placeholder="00000-000" required />
+          </div>
+          <div class="form-group">
+            <label for="cidade" class="form-label">Cidade</label>
+            <input type="text" class="form-control" id="cidade" placeholder="São Paulo" required />
+          </div>
+          <div class="form-group">
+            <label for="estado" class="form-label">Estado</label>
+            <input type="text" class="form-control" id="estado" placeholder="SP" maxlength="2" required />
+          </div>
+        </div>
+
+        <!-- Linha 5: Bairro e Rua -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bairro" class="form-label">Bairro</label>
+            <input type="text" class="form-control" id="bairro" placeholder="Jardim Paulista" required />
+          </div>
+          <div class="form-group">
+            <label for="rua" class="form-label">Rua</label>
+            <input type="text" class="form-control" id="rua" placeholder="Av. Paulista" required />
+          </div>
+        </div>
+
+        <!-- Botões Cancelar e Salvar -->
+        <div class="button-row">
+          <button type="button" class="btn btn-cancel" onclick="window.location.href='Home.html'">CANCELAR</button>
+          <button type="submit" class="btn btn-save">SALVAR</button>
+        </div>
+
+      </form>
+    </div>
+
   </div>
 
   <!-- Bootstrap JS Bundle -->
@@ -200,25 +295,47 @@
 
   <!-- JavaScript para interatividade -->
   <script>
+    // Carrega o nome do usuário (opcional)
+    document.addEventListener('DOMContentLoaded', function() {
+      const nomeUsuario = localStorage.getItem('usuarioLogado') || 'Instrutor';
+      document.getElementById('userName').textContent = nomeUsuario;
+
+      // Botão de sair
+      document.querySelector('.bi-box-arrow-right').addEventListener('click', function() {
+        if (confirm("Deseja sair do sistema?")) {
+          localStorage.removeItem('usuarioLogado');
+          window.location.href = 'login.html';
+        }
+      });
+    });
+
+    // Alternar visibilidade da senha
+    document.getElementById('toggleSenha').addEventListener('click', function () {
+      const senhaInput = document.getElementById('senhaProvisoria');
+      const icon = this.querySelector('i');
+      
+      if (senhaInput.type === 'password') {
+        senhaInput.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+      } else {
+        senhaInput.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+      }
+    });
+
     // Simulação de salvamento
     document.getElementById('cadastroInstrutorForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
       const nome = document.getElementById('nome').value;
-      const cpf = document.getElementById('cpf').value;
       const email = document.getElementById('email').value;
-      const nascimento = document.getElementById('nascimento').value;
-      const cep = document.getElementById('cep').value;
-      const cidade = document.getElementById('cidade').value;
-      const estado = document.getElementById('estado').value;
-      const bairro = document.getElementById('bairro').value;
-      const rua = document.getElementById('rua').value;
+      const cpf = document.getElementById('cpf').value;
 
-      // Simulação de salvamento
       alert(`Instrutor cadastrado com sucesso!\nNome: ${nome}\nEmail: ${email}\nCPF: ${cpf}`);
 
-      // Redireciona para a tela de login
-      window.location.href = 'Index.html';
+      window.location.href = 'Home.html';
     });
   </script>
 

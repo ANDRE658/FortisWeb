@@ -136,13 +136,20 @@ document.addEventListener("DOMContentLoaded", function () {
       window.location.href = "CadastroExercicio.html";
     });
 
-  // Lógica de edição (listener delegado)
+    // 👇 **** INÍCIO DA ATUALIZAÇÃO ****
+  // 6. Lógica de edição (funcionalidade futura)
+  // Adiciona um listener no 'tbody' (que é fixo) para pegar cliques
+  // nos ícones de lápis (que são dinâmicos)
   document.querySelector("tbody").addEventListener("click", function (e) {
     if (e.target && e.target.classList.contains("action-icon")) {
       const exercicioId = e.target.getAttribute("data-exercicio-id");
-      alert(`(Em breve) Editando exercício com ID: ${exercicioId}.`);
+      
+      // Remove o alert() e redireciona
+      // alert(`(Em breve) Editando exercício com ID: ${exercicioId}.`);
+      window.location.href = `CadastroExercicio.html?id=${exercicioId}`;
     }
   });
+  // 👆 **** FIM DA ATUALIZAÇÃO ****
 
   // --- 3. INICIALIZAÇÃO ---
   // Carrega a lista de exercícios da API assim que a página abre
