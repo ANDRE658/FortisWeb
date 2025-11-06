@@ -10,11 +10,12 @@ async function criarTreinoParaDia(diaSemana) {
     alert("Por favor, selecione um aluno.");
     return;
   }
-  
+  if (!nomeTreino) {
+    alert("Por favor, digite um nome para o treino (Ex: Upper/Lower).");
+    return;
+  }
   if (!token || !instrutorId) {
-    alert(
-      "Sessão expirada ou instrutor não encontrado. Faça o login novamente."
-    );
+    alert("Sessão expirada ou instrutor não encontrado. Faça o login novamente.");
     window.location.href = "Index.html";
     return;
   }
@@ -24,35 +25,33 @@ async function criarTreinoParaDia(diaSemana) {
     nome: nomeTreino,
     diaSemana: diaSemana, // Envia "SEGUNDA", "TERCA", etc.
     alunoId: parseInt(alunoId),
-    instrutorId: parseInt(instrutorId),
+    instrutorId: parseInt(instrutorId)
   };
 
   // 3. Salva o treino (Passo 1 do backend)
   try {
-    const response = await fetch("http://localhost:8080/treino/salvar", {
-      method: "POST",
+    const response = await fetch('http://localhost:8080/treino/salvar', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(treinoData),
+      body: JSON.stringify(treinoData)
     });
 
-    if (response.status === 201) {
-      // 201 Created
+    if (response.status === 201) { // 201 Created
       const treinoCriado = await response.json();
-
+      
       // 4. Redireciona para a tela de adicionar exercícios (Passo 2)
-      // Passa o ID do treino criado, o nome do aluno e o dia
       const alunoNomeSelect = document.getElementById("alunoSelect");
-      const alunoNome =
-        alunoNomeSelect.options[alunoNomeSelect.selectedIndex].text;
-
+      const alunoNome = alunoNomeSelect.options[alunoNomeSelect.selectedIndex].text;
+      
       window.location.href = `AdicionarExercicio.html?treinoId=${treinoCriado.id}&aluno=${alunoNome}&dia=${diaSemana}`;
+    
     } else if (response.status === 404) {
-      alert("Erro: Aluno ou Instrutor não encontrado na API (ID inválido).");
+       alert("Erro: Aluno ou Instrutor não encontrado na API (ID inválido).");
     } else {
-      alert("Erro ao criar o treino. Código: " + response.status);
+       alert("Erro ao criar o treino. Código: " + response.status);
     }
   } catch (error) {
     console.error("Erro na requisição:", error);
@@ -62,9 +61,9 @@ async function criarTreinoParaDia(diaSemana) {
 
 // Função para carregar os alunos no dropdown
 async function carregarAlunos() {
-  const token = localStorage.getItem("jwtToken");
+  const token = localStorage.getItem('jwtToken');
   const select = document.getElementById("alunoSelect");
-
+  
   if (!token) {
     alert("Sessão expirada. Faça o login.");
     window.location.href = "Index.html";
@@ -72,15 +71,15 @@ async function carregarAlunos() {
   }
 
   try {
-    const response = await fetch("http://localhost:8080/aluno/listar", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await fetch('http://localhost:8080/aluno/listar', {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (response.ok) {
       const alunos = await response.json();
       select.innerHTML = '<option value="">Selecione um aluno</option>'; // Limpa o "Carregando..."
-      alunos.forEach((aluno) => {
+      alunos.forEach(aluno => {
         select.innerHTML += `<option value="${aluno.id}">${aluno.nome}</option>`;
       });
     } else {
@@ -94,6 +93,7 @@ async function carregarAlunos() {
 
 // --- Ponto de Entrada: O DOM foi carregado ---
 document.addEventListener("DOMContentLoaded", function () {
+  
   // 1. Carrega o nome do usuário
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
   document.getElementById("userName").textContent = nomeUsuario;
@@ -101,38 +101,25 @@ document.addEventListener("DOMContentLoaded", function () {
   // 2. Popula o dropdown de alunos
   carregarAlunos();
 
-  // 3. Adiciona os cliques nos dias da semana
-  document
-    .getElementById("btEditarSegunda")
-    .addEventListener("click", () => criarTreinoParaDia("SEGUNDA"));
-  document
-    .getElementById("btEditarTerca")
-    .addEventListener("click", () => criarTreinoParaDia("TERCA"));
-  document
-    .getElementById("btEditarQuarta")
-    .addEventListener("click", () => criarTreinoParaDia("QUARTA"));
-  document
-    .getElementById("btEditarQuinta")
-    .addEventListener("click", () => criarTreinoParaDia("QUINTA"));
+  // --- INÍCIO DA CORREÇÃO ---
+  // Adiciona os cliques nos dias da semana (agora todos por ID)
+  document.getElementById("btEditarSegunda").addEventListener("click", () => criarTreinoParaDia("SEGUNDA"));
+  document.getElementById("btEditarTerca").addEventListener("click", () => criarTreinoParaDia("TERCA"));
+  document.getElementById("btEditarQuarta").addEventListener("click", () => criarTreinoParaDia("QUARTA"));
+  document.getElementById("btEditarQuinta").addEventListener("click", () => criarTreinoParaDia("QUINTA"));
+  
+  // Agora que o HTML de Sexta tem o ID, esta linha vai funcionar:
+  document.getElementById("btEditarSexta").addEventListener("click", () => criarTreinoParaDia("SEXTA"));
+  // --- FIM DA CORREÇÃO ---
 
-  // (Ajuste no HTML, o seu ID estava errado para sexta)
-  const btSexta = document.querySelector(".btEditarSexta"); // Pega pela classe
-  if (btSexta) {
-    btSexta.addEventListener("click", () => criarTreinoParaDia("SEXTA"));
-  } else {
-    // Tenta pegar pelo ID se a classe falhar (fallback)
-    const btSextaId = document.getElementById("btEditarSexta");
-    if (btSextaId)
-      btSextaId.addEventListener("click", () => criarTreinoParaDia("SEXTA"));
-  }
 
   // 4. Lógica de navegação
-  document.querySelectorAll(".nav-menu li").forEach((item) => {
-    item.addEventListener("click", function (event) {
-      const pagina = event.currentTarget.dataset.page;
-      if (pagina) {
-        window.location.href = pagina;
-      }
+  document.querySelectorAll('.nav-menu li').forEach(item => {
+    item.addEventListener('click', function(event) {
+        const pagina = event.currentTarget.dataset.page; 
+        if (pagina) {
+            window.location.href = pagina;
+        }
     });
   });
 
@@ -147,14 +134,10 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = "Index.html";
       }
     });
-
+    
   // 6. Botão Salvar (agora sem função, pois a ação está nos dias)
-  document
-    .getElementById("criarTreinoForm")
-    .addEventListener("submit", function (e) {
+  document.getElementById("criarTreinoForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      alert(
-        "Por favor, clique no ícone de lápis do dia da semana que deseja editar/adicionar."
-      );
-    });
+      alert("Por favor, clique no ícone de lápis do dia da semana que deseja editar/adicionar.");
+  });
 });

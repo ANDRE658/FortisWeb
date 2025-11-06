@@ -1,6 +1,7 @@
+/* --- GERAL --- */
 body {
-  background-color: #00008b;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #00008B;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
   height: 100vh;
@@ -10,7 +11,7 @@ body {
 
 .navbar {
   background-color: #000066;
-  border-bottom: 2px solid #00bfff;
+  border-bottom: 2px solid #00BFFF;
   padding: 10px 20px;
   display: flex;
   justify-content: space-between;
@@ -18,7 +19,7 @@ body {
 }
 
 .navbar-brand {
-  font-family: "Playfair Display", serif;
+  font-family: 'Playfair Display', serif;
   font-size: 28px;
   color: white;
   font-weight: bold;
@@ -56,7 +57,7 @@ body {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 3px solid #00bfff;
+  border: 3px solid #00BFFF;
   object-fit: cover;
 }
 
@@ -80,7 +81,7 @@ body {
 }
 
 .nav-menu li:hover {
-  background-color: #00008b;
+  background-color: #00008B;
 }
 
 .nav-menu li.active {
@@ -106,6 +107,7 @@ body {
   text-align: center;
 }
 
+/* --- FORMULÁRIO --- */
 .form-row {
   display: flex;
   gap: 20px;
@@ -120,7 +122,7 @@ body {
 
 .form-label {
   font-weight: bold;
-  color: #00008b;
+  color: #00008B;
   margin-bottom: 5px;
 }
 
@@ -131,8 +133,8 @@ body {
   font-size: 16px;
 }
 
-.btn-day {
-  background-color: #00008b;
+.btn-add-row {
+  background-color: #00008B;
   color: white;
   border: none;
   border-radius: 25px;
@@ -140,7 +142,97 @@ body {
   font-weight: bold;
   letter-spacing: 1px;
   font-size: 14px;
-  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-add-row:hover {
+  background-color: #000066;
+}
+
+.day-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 20px 0 10px;
+  text-align: center;
+}
+
+.exercise-table {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.table-header {
+  background-color: #f8f9fa;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+}
+
+.table-header-item {
+  flex: 1;
+  padding: 0 5px;
+}
+
+.table-header-item-small {
+  flex: 0 0 80px;
+  padding: 0 5px;
+  text-align: center;
+}
+
+.table-body {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.table-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.table-cell {
+  flex: 1;
+  padding: 0 5px;
+}
+
+.table-cell-small {
+  flex: 0 0 80px;
+  padding: 0 5px;
+  text-align: center;
+}
+
+.input-serie,
+.input-rep {
+  width: 60px;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.btn-remove-row {
+  color: #dc3545;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.btn-remove-row:hover {
+  color: #c82333;
+}
+
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
 }
 
 .btn-cancel {
@@ -163,58 +255,4 @@ body {
   font-weight: bold;
   letter-spacing: 1px;
   font-size: 14px;
-}
-
-.button-row {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 30px;
-}
-
-.exercise-table {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  margin-top: 20px;
-}
-
-.table-header {
-  background-color: #f8f9fa;
-  padding: 10px 15px;
-  display: flex;
-  align-items: center;
-  font-weight: bold;
-  border-bottom: 1px solid #ddd;
-}
-
-.table-header-item {
-  flex: 1;
-  padding: 0 5px;
-}
-
-.table-body {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.table-row {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
-  border-bottom: 1px solid #eee;
-}
-
-.table-cell {
-  flex: 1;
-  padding: 0 5px;
-}
-
-.input-serie,
-.input-rep {
-  width: 60px;
-  padding: 4px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  text-align: center;
 }

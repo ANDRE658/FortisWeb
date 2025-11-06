@@ -58,6 +58,11 @@
         <!-- Linha 1: Nome Treino e Aluno -->
         <div class="form-row">
           <div class="form-group">
+            <label for="nomeTreino" class="form-label">Nome Treino</label>
+            <input type="text" class="form-control" id="nomeTreino" placeholder="Ex: Upper / Lower, PPL, Full Body"
+              value="Upper / Lower" required />
+          </div>
+          <div class="form-group">
             <label for="alunoSelect" class="form-label">Aluno</label>
             <select class="form-control" id="alunoSelect" required>
               <option value="">Carregando alunos...</option>
@@ -120,7 +125,7 @@
               <div class="day-header"
                 style="font-weight: bold; text-align: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
                 Sexta-Feira
-                <i class="bi bi-pen" class="btEditarSexta"></i>
+                <i class="bi bi-pen" id="btEditarSexta"></i>
               </div>
 
             </div>
