@@ -1,40 +1,143 @@
-// Carrega o nome do usuário
-    document.addEventListener('DOMContentLoaded', function() {
-      const nomeUsuario = localStorage.getItem('usuarioLogado') || 'Instrutor';
-      document.getElementById('userName').textContent = nomeUsuario;
+// Variável global para armazenar a lista completa de instrutores
+let todosInstrutores = [];
 
-      // Botão de sair
-      document.querySelector('.bi-box-arrow-right').addEventListener('click', function() {
-        if (confirm("Deseja sair do sistema?")) {
-          localStorage.removeItem('usuarioLogado');
-          window.location.href = 'login.html';
-        }
-      });
+/**
+ * Função para renderizar a tabela com uma lista de instrutores
+ * @param {Array} instrutores - A lista de instrutores a ser mostrada
+ */
+function renderizarTabela(instrutores) {
+  const tbody = document.querySelector(".table-container table tbody");
+  tbody.innerHTML = ""; // Limpa a tabela
 
-      // Switches de status
-      document.querySelectorAll('.switch input').forEach(switchInput => {
-        switchInput.addEventListener('change', function() {
-          const row = this.closest('tr');
-          const statusCell = row.querySelector('td:nth-child(3) span');
-          if (this.checked) {
-            statusCell.textContent = 'Ativo';
-            statusCell.className = 'status-ativo';
-          } else {
-            statusCell.textContent = 'Inativo';
-            statusCell.className = 'status-inativo';
-          }
-        });
-      });
+  if (instrutores.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="4" class="text-center">Nenhum instrutor encontrado.</td></tr>';
+    return;
+  }
 
-      document.getElementById('btCadastrarInstrutor').addEventListener('click', function() {
-        window.location.href = 'Cadastroinstrutor.html';
-      });
+  instrutores.forEach((instrutor) => {
+    // O modelo Instrutor.java não tem "status". Vamos simular.
+    const statusHtml = '<span class="status-ativo">Ativo</span>';
 
-      // Ícones de edição
-      document.querySelectorAll('.action-icon').forEach(icon => {
-        icon.addEventListener('click', function() {
-          const nome = this.closest('tr').querySelector('td:first-child').textContent;
-          alert(`Editando instrutor: ${nome}\n(Implementar tela de edição)`);
-        });
-      });
+    const newRow = `
+      <tr>
+        <td>${instrutor.nome}</td>
+        <td>${instrutor.cpf}</td>
+        <td>${statusHtml}</td>
+        <td>
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+          <i class="bi bi-pencil action-icon" data-instrutor-id="${instrutor.id}" title="Editar"></i>
+        </td>
+      </tr>
+    `;
+    tbody.innerHTML += newRow;
+  });
+}
+
+/**
+ * Função principal para carregar os instrutores da API
+ */
+async function carregarInstrutores() {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) {
+    alert("Sessão expirada. Faça o login novamente.");
+    window.location.href = "Index.html";
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:8080/instrutor/listar", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
+
+    if (response.ok) {
+      const instrutores = await response.json();
+      todosInstrutores = instrutores; // Salva na lista global
+      renderizarTabela(todosInstrutores); // Renderiza a tabela
+    } else if (response.status === 403) {
+      alert("Sua sessão expirou ou você não tem permissão. Faça o login novamente.");
+      window.location.href = "Index.html";
+    } else {
+      alert("Erro ao carregar instrutores. Código: " + response.status);
+    }
+  } catch (error) {
+    console.error("Erro de rede:", error);
+    alert("Não foi possível conectar à API para listar os instrutores.");
+  }
+}
+
+// --- Ponto de Entrada: O DOM foi carregado ---
+document.addEventListener("DOMContentLoaded", function () {
+  
+  // 1. Carrega o nome do usuário
+  const nomeUsuario = localStorage.getItem("usuarioLogado") || "Usuário";
+  document.getElementById("userName").textContent = nomeUsuario;
+
+  // 2. Carrega a lista de instrutores da API
+  carregarInstrutores();
+
+  // 3. Adiciona a lógica da BARRA DE BUSCA
+  const searchInput = document.querySelector(".search-input");
+  searchInput.addEventListener("input", function (e) {
+    const termoBusca = e.target.value.toLowerCase();
+    
+    // Filtra a lista 'todosInstrutores'
+    const instrutoresFiltrados = todosInstrutores.filter(instrutor => 
+      instrutor.nome.toLowerCase().includes(termoBusca) ||
+      instrutor.cpf.includes(termoBusca)
+    );
+    
+    // Renderiza a tabela apenas com os instrutores filtrados
+    renderizarTabela(instrutoresFiltrados);
+  });
+
+  // 4. Lógica de navegação (Menu)
+  document.querySelectorAll(".nav-menu li").forEach(item => {
+    item.addEventListener("click", function(event) {
+        const pagina = event.currentTarget.dataset.page; 
+        if (pagina) {
+            window.location.href = pagina;
+        }
+    });
+  });
+
+  // 5. Botão de sair (Logout)
+  document
+    .querySelector(".bi-box-arrow-right")
+    .addEventListener("click", function () {
+      if (confirm("Deseja sair do sistema?")) {
+        localStorage.removeItem("usuarioLogado");
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("instrutorId");
+        window.location.href = "Index.html";
+      }
+    });
+
+  // 6. Botão Cadastrar Instrutor
+  document.getElementById("btCadastrarInstrutor").addEventListener("click", function () {
+    // O HTML já tem: onclick="window.location.href='cadastro-instrutor.html'"
+    // Mas vamos garantir que o nome do arquivo esteja correto.
+    // O seu HTML <head> linka para "Style/StyleCadastroInstrutor.css"
+    // E o seu form action é "Script/ScriptCadastroInstrutor"
+    // Mas o arquivo HTML é "CadastroInstrutor.html"
+    window.location.href = "CadastroInstrutor.html";
+  });
+
+  // 7. Lógica de edição (listener delegado)
+  document.querySelector("tbody").addEventListener("click", function(e) {
+    if (e.target && e.target.classList.contains('action-icon')) {
+      const instrutorId = e.target.getAttribute('data-instrutor-id');
+      
+      // 👇 **** ESTA É A MUDANÇA ****
+      // Remove o alert() e redireciona para a tela de cadastro
+      window.location.href = `CadastroInstrutor.html?id=${instrutorId}`;
+    }
+  });
+
+});
