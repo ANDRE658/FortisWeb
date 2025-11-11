@@ -168,6 +168,16 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
+    // ... (Toda a lógica de navegação: .nav-menu, .bi-box-arrow-right, #iconHome) ...
+  document.querySelectorAll('.nav-menu li').forEach(item => {
+    item.addEventListener('click', function(event) {
+        const pagina = event.currentTarget.dataset.page; 
+        if (pagina) {
+            window.location.href = pagina;
+        }
+    });
+  });
+
   // --- INICIALIZAÇÃO DA PÁGINA ---
   carregarDadosDoInstrutor(); // Tenta carregar os dados se for modo de edição
 });

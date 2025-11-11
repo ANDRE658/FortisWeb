@@ -17,6 +17,10 @@ body {
   align-items: center;
 }
 
+.nav-menu li.active {
+  background-color: #007bff;
+  color: white;
+}
 .navbar-brand {
   font-family: "Playfair Display", serif;
   font-size: 28px;

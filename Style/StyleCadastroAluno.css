@@ -183,3 +183,7 @@ body {
 .form-group.position-relative {
   position: relative;
 }
+.nav-menu li.active {
+  background-color: #007bff;
+  color: white;
+}

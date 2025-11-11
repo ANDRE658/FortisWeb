@@ -18,16 +18,14 @@ function renderizarTabela(fichas) {
   fichas.forEach((ficha) => {
     // O backend já nos mandou o Aluno junto com a Ficha
     const nomeAluno = ficha.aluno ? ficha.aluno.nome : "Aluno não encontrado";
-    const nomeTreino = ficha.nome; // Ex: "Upper / Lower"
-    
+
     // Status (simulado, pois não temos no backend)
     const statusHtml = '<span class="status-ativo">Ativo</span>';
 
     const newRow = `
       <tr>
         <td>${nomeAluno}</td>
-        <td>${nomeTreino}</td>
-        <td>${statusHtml}</td>
+        <td>Ficha #${ficha.id}</td> <td>${statusHtml}</td>
         <td>
           <i class="bi bi-pencil action-icon" data-ficha-id="${ficha.id}" title="Editar / Ver Treino"></i>
         </td>
@@ -49,7 +47,8 @@ async function carregarFichasDeTreino() {
   }
 
   try {
-    const response = await fetch("http://localhost:8080/ficha-treino/listar", { // <-- NOSSO NOVO ENDPOINT
+    const response = await fetch("http://localhost:8080/ficha-treino/listar", {
+      // <-- NOSSO NOVO ENDPOINT
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -64,7 +63,9 @@ async function carregarFichasDeTreino() {
       // 204 No Content (lista vazia)
       renderizarTabela([]); // Renderiza a tabela com a mensagem "Nenhum treino"
     } else if (response.status === 403) {
-      alert("Sua sessão expirou ou você não tem permissão. Faça o login novamente.");
+      alert(
+        "Sua sessão expirou ou você não tem permissão. Faça o login novamente."
+      );
       window.location.href = "Index.html";
     } else {
       alert("Erro ao carregar treinos. Código: " + response.status);
@@ -77,7 +78,6 @@ async function carregarFichasDeTreino() {
 
 // --- Ponto de Entrada: O DOM foi carregado ---
 document.addEventListener("DOMContentLoaded", function () {
-  
   // 1. Carrega o nome do usuário
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
   document.getElementById("userName").textContent = nomeUsuario;
@@ -106,17 +106,19 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // 3. Botão "+ CRIAR TREINO"
-  document.getElementById("btnCriarTreino").addEventListener("click", function () {
+  document
+    .getElementById("btnCriarTreino")
+    .addEventListener("click", function () {
       // Redireciona para a tela de cadastro SEM ID (modo de criação)
       window.location.href = "CadastroTreino.html";
-  });
+    });
 
   // 4. Lógica de Edição (Clique no Lápis)
   // Usamos "event delegation" pois os ícones são criados dinamicamente
-  document.querySelector("tbody").addEventListener("click", function(e) {
-    if (e.target && e.target.classList.contains('action-icon')) {
-      const fichaId = e.target.getAttribute('data-ficha-id');
-      
+  document.querySelector("tbody").addEventListener("click", function (e) {
+    if (e.target && e.target.classList.contains("action-icon")) {
+      const fichaId = e.target.getAttribute("data-ficha-id");
+
       // Redireciona para a tela de cadastro COM ID (modo de edição/visualização)
       window.location.href = `CadastroTreino.html?id=${fichaId}`;
     }

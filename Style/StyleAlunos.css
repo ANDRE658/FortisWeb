@@ -24,6 +24,10 @@ body {
   font-weight: bold;
   letter-spacing: 2px;
 }
+.nav-menu li.active {
+  background-color: #007bff;
+  color: white;
+}
 
 .navbar-icon {
   color: white;

@@ -36,6 +36,10 @@ body {
   height: calc(100vh - 60px);
   overflow: hidden;
 }
+.nav-menu li.active {
+  background-color: #007bff;
+  color: white;
+}
 
 .sidebar {
   width: 250px;

@@ -256,3 +256,7 @@ body {
   letter-spacing: 1px;
   font-size: 14px;
 }
+.nav-menu li.active {
+  background-color: #007bff;
+  color: white;
+}
