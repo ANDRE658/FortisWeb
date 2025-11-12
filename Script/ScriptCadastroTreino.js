@@ -1,17 +1,21 @@
-// Variável global para guardar o ID da Ficha depois que ela for salva
-let fichaIdSalva = null;
+// === VARIÁVEIS GLOBAIS ===
+let exerciciosCatalogo = [];
+const DIAS_SEMANA = ["SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA"];
+
+// Variáveis para o Modo Edição
+let modoEdicao = false;
+let fichaIdParaEditar = null;
 
 /**
- * Função para carregar os alunos no dropdown (versão corrigida)
+ * Carrega os Alunos (Dropdown)
  */
 async function carregarAlunos() {
   const token = localStorage.getItem("jwtToken");
   const select = document.getElementById("alunoSelect");
-
   if (!token) {
     alert("Sessão expirada. Faça o login.");
     window.location.href = "Index.html";
-    return;
+    return Promise.reject(new Error("Sem token"));
   }
 
   try {
@@ -19,159 +23,108 @@ async function carregarAlunos() {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    // Causa 1: Sem permissão
-    if (response.status === 403) {
-      console.error(
-        "Erro 403: O usuário não tem permissão para /aluno/listar."
-      );
-      select.innerHTML = '<option value="">(Sem permissão)</option>';
-      alert("Você não tem permissão para carregar a lista de alunos.");
-      return;
-    }
-
-    // Causa 2: Lista vazia (API retorna 204 No Content)
     if (response.status === 204) {
-      console.log("A lista de alunos está vazia (204 No Content).");
       select.innerHTML = '<option value="">Nenhum aluno cadastrado</option>';
-      return;
+      return Promise.resolve();
     }
-
-    // Causa 3: Outro erro
     if (!response.ok) {
-      // Status 500, 404, etc.
-      throw new Error("Falha ao buscar alunos: " + response.status);
+      throw new Error("Falha ao buscar alunos");
     }
 
-    // Sucesso (Status 200 OK)
     const alunos = await response.json();
     select.innerHTML = '<option value="">Selecione um aluno</option>';
     alunos.forEach((aluno) => {
       select.innerHTML += `<option value="${aluno.id}">${aluno.nome}</option>`;
     });
+    return Promise.resolve(); // Sucesso
   } catch (error) {
     console.error("Erro ao buscar alunos:", error);
     select.innerHTML = '<option value="">Erro de conexão</option>';
+    return Promise.reject(error);
   }
 }
 
 /**
- * Salva a "Ficha" principal (Passo 1)
+ * Carrega o Catálogo de Exercícios (para os dropdowns)
  */
-async function salvarFicha(e) {
-  e.preventDefault(); // Impede o envio padrão do formulário
-
+async function carregarExerciciosAPI() {
   const token = localStorage.getItem("jwtToken");
-  const instrutorId = localStorage.getItem("instrutorId");
-  const alunoId = document.getElementById("alunoSelect").value;
-
-  if (!alunoId) {
-    // <-- ATUALIZE ESTA VALIDAÇÃO
-    alert("Selecione um Aluno.");
-    return;
-  }
-
-  const fichaData = {
-    alunoId: parseInt(alunoId),
-    instrutorId: parseInt(instrutorId),
-  };
+  if (!token) return Promise.reject(new Error("Sem token"));
 
   try {
-    const response = await fetch("http://localhost:8080/ficha-treino/salvar", {
-      // <-- NOVO ENDPOINT
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(fichaData),
+    const response = await fetch("http://localhost:8080/exercicio/listar", {
+      headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (response.status === 201) {
-      // 201 Created
-      const fichaCriada = await response.json();
-      fichaIdSalva = fichaCriada.id; // <-- SALVA O ID GLOBALMENTE
-
-      alert(
-        "Ficha salva com sucesso! Agora adicione os treinos para cada dia."
-      );
-
-      // Trava o formulário de cima
-      document.getElementById("alunoSelect").disabled = true;
-      document.getElementById("nomeTreino").disabled = true;
-
-      // Muda o botão de Salvar para "Ficha Salva" e o desabilita
-      const btnSalvar = document.querySelector(".btn-save");
-      btnSalvar.textContent = "FICHA SALVA";
-      btnSalvar.disabled = true;
+    if (response.ok) {
+      exerciciosCatalogo = await response.json();
+      return Promise.resolve();
     } else {
-      alert("Erro ao salvar a ficha. Código: " + response.status);
+      console.error("Não foi possível carregar o catálogo de exercícios.");
+      return Promise.reject(new Error("Falha ao carregar exercícios"));
     }
   } catch (error) {
-    console.error("Erro na requisição da ficha:", error);
-    alert("Não foi possível conectar à API para salvar a ficha.");
+    console.error("Erro ao carregar exercícios da API:", error);
+    return Promise.reject(error);
   }
 }
 
 /**
- * Modificada: Cria o "Dia" (Passo 2) e redireciona
+ * Adiciona uma nova linha de exercício (em branco)
  */
-async function criarTreinoParaDia(diaSemana) {
-  if (!fichaIdSalva) {
-    alert("Por favor, selecione o Aluno e clique em 'SALVAR' primeiro.");
-    return;
-  }
+function adicionarNovaLinha(diaSemana) {
+  const tabelaBody = document.getElementById(`tabela-${diaSemana}`);
+  if (!tabelaBody) return;
 
-  // ---- INÍCIO DA MUDANÇA ----
-  // Pergunta o nome do treino para o dia
-  const nomeDoTreinoDia = prompt(
-    `Qual o nome do treino para ${diaSemana}? \n(Ex: Peito e Tríceps)`
-  );
+  const novaLinha = document.createElement("div");
+  novaLinha.className = "table-row";
+  novaLinha.innerHTML = `
+    <div class="table-cell">
+      <select class="form-control exercicio-select" required>
+        <option value="">Selecione...</option>
+      </select>
+    </div>
+    <div class="table-cell-small">
+      <input type="number" class="input-serie" placeholder="3" min="1" required />
+    </div>
+    <div class="table-cell-small">
+      <input type="text" class="input-rep" placeholder="10-12" required />
+    </div>
+    <div class="table-cell-small">
+      <i class="bi bi-trash btn-remove-row" title="Remover linha"></i>
+    </div>
+  `;
 
-  if (!nomeDoTreinoDia || nomeDoTreinoDia.trim() === "") {
-    alert("O nome do treino é obrigatório.");
-    return; // Cancela se o usuário não digitar nada
-  }
-  // ---- FIM DA MUDANÇA ----
+  const select = novaLinha.querySelector(".exercicio-select");
+  popularDropdown(select);
+  tabelaBody.appendChild(novaLinha);
 
-  const token = localStorage.getItem("jwtToken");
-  const diaData = {
-    fichaId: fichaIdSalva,
-    diaSemana: diaSemana,
-    nome: nomeDoTreinoDia, // <-- ADICIONE O NOME AQUI
-  };
-
-  try {
-    const response = await fetch("http://localhost:8080/treino/salvar", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(diaData),
-    });
-
-    if (response.status === 201) {
-      const diaCriado = await response.json();
-      const alunoNomeSelect = document.getElementById("alunoSelect");
-      const alunoNome =
-        alunoNomeSelect.options[alunoNomeSelect.selectedIndex].text;
-
-      // Agora passamos o ID do Dia (treinoId) E o ID da Ficha (fichaId)
-      window.location.href = `AdicionarExercicio.html?treinoId=${diaCriado.id}&fichaId=${fichaIdSalva}&aluno=${alunoNome}&dia=${diaSemana}`;
-    } else {
-      alert("Erro ao criar o dia de treino. Código: " + response.status);
-    }
-  } catch (error) {
-    console.error("Erro na requisição do dia:", error);
-    alert("Não foi possível conectar à API para salvar o dia.");
-  }
+  // Retorna a linha criada para o modo de edição
+  return novaLinha;
 }
 
 /**
- * NOVA FUNÇÃO: Busca a ficha completa e seus filhos na API.
+ * Preenche um dropdown <select> com o catálogo
  */
-async function carregarFichaExistente(id) {
+function popularDropdown(selectElement) {
+  if (!selectElement || exerciciosCatalogo.length === 0) return;
+  exerciciosCatalogo.forEach((ex) => {
+    selectElement.innerHTML += `<option value="${ex.id}">${ex.nome}</option>`;
+  });
+}
+
+/**
+ * Remove uma linha de exercício (lixeira)
+ */
+function removerLinha(event) {
+  if (event.target && event.target.classList.contains("btn-remove-row")) {
+    event.target.closest(".table-row").remove();
+  }
+}
+
+// ======================================================
+// === NOVA FUNÇÃO: CARREGAR FICHA (MODO EDIÇÃO) ===
+// ======================================================
+async function carregarFichaParaEdicao(id) {
   const token = localStorage.getItem("jwtToken");
   if (!token) return;
 
@@ -184,93 +137,182 @@ async function carregarFichaExistente(id) {
       }
     );
 
-    if (response.ok) {
-      const ficha = await response.json();
-
-      // 1. Preenche os dados da ficha
-      document.getElementById("nomeTreino").value = ficha.nome;
-      document.getElementById("alunoSelect").value = ficha.aluno.id;
-      fichaIdSalva = ficha.id; // Define o ID global
-
-      // 2. Trava os campos
-      document.getElementById("alunoSelect").disabled = true;
-      document.getElementById("nomeTreino").disabled = true;
-      const btnSalvar = document.querySelector(".btn-save");
-      btnSalvar.textContent = "FICHA SALVA";
-      btnSalvar.disabled = true;
-
-      // 3. Renderiza os exercícios na tela
-      renderizarExercicios(ficha);
-    } else {
+    if (!response.ok) {
       alert("Erro ao carregar a ficha de treino. Voltando para a lista.");
-      window.location.href = "Treinos.html"; // (Tela que lista as fichas)
+      window.location.href = "Treinos.html";
+      return;
+    }
+
+    const ficha = await response.json();
+
+    // 1. Preenche o Aluno
+    document.getElementById("alunoSelect").value = ficha.aluno.id;
+
+    // 2. Itera sobre os Dias de Treino da Ficha
+    for (const dia of ficha.diasDeTreino) {
+      const diaSemana = dia.diaSemana; // "SEGUNDA", "TERCA", etc.
+
+      // 3. Preenche o nome do treino (Ex: "Peito e Tríceps")
+      document.getElementById(`nome-${diaSemana}`).value = dia.nome;
+
+      // 4. Itera sobre os Itens (Exercícios) daquele dia
+      if (dia.itensTreino) {
+        for (const item of dia.itensTreino) {
+          // 5. Adiciona uma linha em branco
+          const novaLinha = adicionarNovaLinha(diaSemana);
+
+          // 6. Preenche a linha com os dados
+          // (API /buscar/{id} retorna a Entidade, usamos item.exercicio.id)
+          novaLinha.querySelector(".exercicio-select").value = item.exercicio.id;
+          novaLinha.querySelector(".input-serie").value = item.series;
+          novaLinha.querySelector(".input-rep").value = item.repeticoes;
+        }
+      }
     }
   } catch (error) {
-    console.error("Erro ao carregar ficha:", error);
+    console.error("Erro ao carregar ficha para edição:", error);
   }
 }
 
 /**
- * NOVA FUNÇÃO: Pega o JSON da ficha e injeta o HTML.
+ * Função principal: Salva (Cria OU Atualiza) a ficha completa
  */
-function renderizarExercicios(ficha) {
-  if (!ficha.diasDeTreino) return; // Sai se não houver dias
+async function salvarFichaCompleta(e) {
+  e.preventDefault();
+  const token = localStorage.getItem("jwtToken");
+  const instrutorId = localStorage.getItem("instrutorId");
+  const alunoId = document.getElementById("alunoSelect").value;
 
-  // 1. Limpa todas as listas (caso já tenha algo)
-  document
-    .querySelectorAll(".exercise-list")
-    .forEach((list) => (list.innerHTML = ""));
+  if (!token || !instrutorId) {
+    alert("Sessão inválida. Faça o login novamente.");
+    return;
+  }
+  if (!alunoId) {
+    alert("Por favor, selecione um aluno.");
+    return;
+  }
 
-  // 2. Itera sobre os DIAS (Treino) da ficha
-  for (const dia of ficha.diasDeTreino) {
-    const diaSemana = dia.diaSemana; // "SEGUNDA", "TERCA", etc.
-    const container = document.getElementById(`lista-${diaSemana}`);
+  // 1. Prepara o DTO "pai"
+  const fichaCompletaDTO = {
+    alunoId: parseInt(alunoId),
+    instrutorId: parseInt(instrutorId),
+    diasDeTreino: [],
+  };
 
-    if (container && dia.itensTreino) {
-      // 3. Itera sobre os EXERCÍCIOS (ItemTreino) de cada dia
-      for (const item of dia.itensTreino) {
-        // Pega o nome do exercício (Graças ao JOIN FETCH da API)
-        const nomeExercicio = item.exercicio
-          ? item.exercicio.nome
-          : "Exercício não encontrado";
+  let totalExercicios = 0;
 
-        const htmlItem = `
-                    <div style="font-size: 14px; padding: 4px 8px; background: #FFF; border-radius: 4px; margin-bottom: 5px;">
-                        <strong>${nomeExercicio}</strong> (${item.series}x ${item.repeticoes})
-                    </div>
-                `;
-        container.innerHTML += htmlItem;
+  // 2. Itera sobre os 5 dias da semana (do HTML)
+  for (const dia of DIAS_SEMANA) {
+    const nomeTreino = document.getElementById(`nome-${dia}`).value;
+    const tabela = document.getElementById(`tabela-${dia}`);
+    const linhasExercicio = tabela.querySelectorAll(".table-row");
+
+    if (nomeTreino && linhasExercicio.length > 0) {
+      const diaDTO = {
+        diaSemana: dia,
+        nome: nomeTreino,
+        itensTreino: [],
+      };
+
+      // 3. Itera sobre os exercícios daquele dia
+      for (const linha of linhasExercicio) {
+        const exercicioId = linha.querySelector(".exercicio-select").value;
+        const series = linha.querySelector(".input-serie").value;
+        const repeticoes = linha.querySelector(".input-rep").value;
+
+        if (!exercicioId || !series || !repeticoes) {
+          alert(
+            `Treino de ${dia}: Preencha todos os campos dos exercícios.`
+          );
+          return;
+        }
+
+        // DTO de salvar espera "exercicioId"
+        const itemDTO = {
+          exercicioId: parseInt(exercicioId),
+          series: parseInt(series),
+          repeticoes: repeticoes,
+          carga: 0,
+          tempoDescansoSegundos: 60,
+        };
+
+        diaDTO.itensTreino.push(itemDTO);
+        totalExercicios++;
       }
+      fichaCompletaDTO.diasDeTreino.push(diaDTO);
     }
+  }
+
+  if (totalExercicios === 0) {
+      alert("A ficha está vazia. Adicione pelo menos um exercício em um dos dias.");
+      return;
+  }
+
+  // ===============================================
+  // === Define o Método e a URL corretos ===
+  // ===============================================
+  const metodo = modoEdicao ? "PUT" : "POST";
+  const url = modoEdicao
+    ? `http://localhost:8080/ficha-treino/atualizar-completa/${fichaIdParaEditar}`
+    : "http://localhost:8080/ficha-treino/salvar-completa";
+  // ===============================================
+
+  // 4. Envia o JSON gigante
+  try {
+    const response = await fetch(url, {
+      method: metodo,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(fichaCompletaDTO),
+    });
+
+    if (response.ok) { // 201 (Created) ou 200 (OK)
+      alert(
+        modoEdicao
+          ? "Ficha atualizada com sucesso!"
+          : "Ficha salva com sucesso!"
+      );
+      window.location.href = "Treinos.html";
+    } else {
+      const erro = await response.text();
+      alert(`Erro ao salvar. Código: ${response.status}\n${erro}`);
+    }
+  } catch (error) {
+    console.error("Erro na requisição:", error);
+    alert("Não foi possível conectar à API.");
   }
 }
 
 // --- Ponto de Entrada: O DOM foi carregado ---
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
   document.getElementById("userName").textContent = nomeUsuario;
 
-  // Popula o dropdown de alunos
-  carregarAlunos();
+  // 1. Conecta o formulário à função salvar
+  document
+    .getElementById("criarTreinoForm")
+    .addEventListener("submit", salvarFichaCompleta);
 
-  // Adiciona os cliques nos 5 dias da semana
-  document
-    .getElementById("btEditarSegunda")
-    .addEventListener("click", () => criarTreinoParaDia("SEGUNDA"));
-  document
-    .getElementById("btEditarTerca")
-    .addEventListener("click", () => criarTreinoParaDia("TERCA"));
-  document
-    .getElementById("btEditarQuarta")
-    .addEventListener("click", () => criarTreinoParaDia("QUARTA"));
-  document
-    .getElementById("btEditarQuinta")
-    .addEventListener("click", () => criarTreinoParaDia("QUINTA"));
-  document
-    .getElementById("btEditarSexta")
-    .addEventListener("click", () => criarTreinoParaDia("SEXTA"));
+  // 2. Adiciona listeners para os botões "Adicionar"
+  document.querySelectorAll(".btn-add-row").forEach((button) => {
+    button.addEventListener("click", function () {
+      const dia = this.getAttribute("data-dia");
+      adicionarNovaLinha(dia);
+    });
+  });
 
-  // Lógica de navegação
+  // 3. Adiciona listeners para os botões "Remover" (Lixeira)
+  document.querySelectorAll(".table-body").forEach((tabela) => {
+    tabela.addEventListener("click", removerLinha);
+  });
+
+  // ===============================================
+  // === INÍCIO DO CÓDIGO DE NAVEGAÇÃO CORRIGIDO ===
+  // ===============================================
+
+  // 4. Lógica de navegação (Menu)
   document.querySelectorAll(".nav-menu li").forEach((item) => {
     item.addEventListener("click", function (event) {
       const pagina = event.currentTarget.dataset.page;
@@ -280,7 +322,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Botão de sair
+  // 5. Lógica de navegação (Sair)
   document
     .querySelector(".bi-box-arrow-right")
     .addEventListener("click", function () {
@@ -290,21 +332,38 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-  // Conecta o formulário à função salvarFicha
+  // 6. Lógica de navegação (Home)
   document
-    .getElementById("criarTreinoForm")
-    .addEventListener("submit", salvarFicha);
+    .querySelector(".navbar .bi-house-door")
+    .addEventListener("click", function () {
+      window.location.href = "Home.html";
+    });
 
-  // --- MUDANÇA PRINCIPAL ---
-  // Verifica se a URL tem um ID (ex: CadastroTreino.html?id=50)
-  const urlParams = new URLSearchParams(window.location.search);
-  const fichaIdFromUrl = urlParams.get("id"); // 'id' ou 'fichaId', como preferir
+  // ===============================================
+  // === FIM DO CÓDIGO DE NAVEGAÇÃO CORRIGIDO ===
+  // ===============================================
 
-  if (fichaIdFromUrl) {
-    // Se tem ID, estamos em MODO DE EDIÇÃO/VISUALIZAÇÃO
-    // Carrega todos os dados da ficha
-    carregarFichaExistente(fichaIdFromUrl);
+
+  // 7. Lógica de Inicialização (EDITAR vs CRIAR)
+  try {
+    // 7.1. Carrega os dropdowns (Aluno e Catálogo de Exercícios) PRIMEIRO
+    await carregarAlunos();
+    await carregarExerciciosAPI();
+  } catch (error) {
+    console.error("Falha ao inicializar a página, parando.");
+    return; // Para se os catálogos falharem
   }
-  // Se não tem ID, a página carrega normalmente (MODO DE CRIAÇÃO)
-  // O usuário preencherá os campos e clicará em "SALVAR".
+
+  // 7.2. Verifica se estamos em Modo Edição
+  const urlParams = new URLSearchParams(window.location.search);
+  fichaIdParaEditar = urlParams.get("id");
+  modoEdicao = fichaIdParaEditar !== null;
+
+  if (modoEdicao) {
+    // 7.3. Se for Edição, muda a UI e carrega os dados
+    document.querySelector(".page-title").textContent = "Editar Ficha de Treino";
+    document.querySelector(".btn-save").textContent = "ATUALIZAR FICHA";
+    await carregarFichaParaEdicao(fichaIdParaEditar);
+  }
+  // Se não for modo de edição, a página simplesmente fica em branco, pronta para criar.
 });
