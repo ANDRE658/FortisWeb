@@ -1,14 +1,8 @@
-/*
- * ARQUIVO: ScriptExercicios.js
- * (Versão unificada com tratamento de erro 403)
- */
-
 // Variável global para armazenar a lista completa de exercícios
 let todosExercicios = [];
 
 /**
  * Função para renderizar a tabela com uma lista de exercícios
- * @param {Array} exercicios - A lista de exercícios a ser mostrada
  */
 function renderizarTabela(exercicios) {
   const tbody = document.querySelector(".table-container table tbody");
@@ -16,12 +10,11 @@ function renderizarTabela(exercicios) {
 
   if (exercicios.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="3" class="text-center">Nenhum exercício encontrado.</td></tr>';
+      '<tr><td colspan="3" class="text-center">Nenhum exercício ativo encontrado.</td></tr>';
     return;
   }
 
   exercicios.forEach((exercicio) => {
-    // O status e o toggle são visuais por enquanto.
     const statusHtml = '<span class="status-ativo">Ativo</span>';
 
     const newRow = `
@@ -29,16 +22,41 @@ function renderizarTabela(exercicios) {
         <td>${exercicio.nome}</td>
         <td>${statusHtml}</td>
         <td>
-          <label class="switch">
-            <input type="checkbox" checked>
-            <span class="slider"></span>
-          </label>
-          <i class="bi bi-pencil action-icon" data-exercicio-id="${exercicio.id}" title="Editar (Em breve)"></i>
+          <i class="bi bi-pencil action-icon edit-btn" data-id="${exercicio.id}" title="Editar" style="margin-right: 15px;"></i>
+          
+          <i class="bi bi-trash action-icon delete-btn" data-id="${exercicio.id}" title="Excluir" style="color: #dc3545;"></i>
         </td>
       </tr>
     `;
     tbody.innerHTML += newRow;
   });
+}
+
+/**
+ * Função para excluir (inativar) o exercício
+ */
+async function excluirExercicio(id) {
+    if (!confirm("Tem certeza que deseja excluir este exercício? Ele não aparecerá mais para novos treinos.")) {
+        return;
+    }
+
+    const token = localStorage.getItem("jwtToken");
+    try {
+        const response = await fetch(`http://localhost:8080/exercicio/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok || response.status === 204) {
+            alert("Exercício excluído com sucesso!");
+            carregarExercicios(); // Recarrega a lista
+        } else {
+            alert("Erro ao excluir o exercício.");
+        }
+    } catch (error) {
+        console.error("Erro na exclusão:", error);
+        alert("Não foi possível conectar à API.");
+    }
 }
 
 /**
@@ -60,98 +78,102 @@ async function carregarExercicios() {
       },
     });
 
+    // TRATAMENTO DO STATUS 204 (Lista Vazia)
+    if (response.status === 204) {
+       todosExercicios = [];
+       renderizarTabela([]);
+       return;
+    }
+
     if (response.ok) {
-      // SUCESSO! A API retornou 200 OK.
       const exercicios = await response.json();
       todosExercicios = exercicios; // Salva na lista global
       renderizarTabela(todosExercicios); // Renderiza a tabela inicial
     
     } else if (response.status === 403) {
-      // --- ESTE É O PROVÁVEL PROBLEMA ---
-      // Erro 403 (Forbidden) = Usuário logado, mas SEM PERMISSÃO.
-      console.error("Erro 403: O usuário não tem permissão para acessar /exercicio/listar.");
-      alert("Você não tem permissão para visualizar esta página. Verifique se sua conta é de 'Instrutor' ou 'Gerenciador'.");
-      renderizarTabela([]); // Mostra a tabela vazia
-    
+      alert("Você não tem permissão para visualizar esta página.");
+      renderizarTabela([]); 
     } else {
-      // Outros erros (500, 404, etc.)
       throw new Error("Erro ao carregar exercícios. Código: " + response.status);
     }
   } catch (error) {
-    // Erros de rede (API offline) ou os erros "throw" acima
     console.error("Erro de rede ou na API:", error);
     const tbody = document.querySelector(".table-container table tbody");
-    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">Falha ao conectar com a API. Verifique o console.</td></tr>`;
+    if(tbody) tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">Falha ao conectar com a API.</td></tr>`;
   }
 }
 
 // --- Ponto de Entrada: O DOM foi carregado ---
 document.addEventListener("DOMContentLoaded", function () {
   
-  // --- 1. LÓGICA DE NAVEGAÇÃO (Menu, Sair, Home) ---
-  
+  // 1. Lógica de Navegação
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
-  document.getElementById("userName").textContent = nomeUsuario;
+  const elUserName = document.getElementById("userName");
+  if(elUserName) elUserName.textContent = nomeUsuario;
 
   document.querySelectorAll(".nav-menu li").forEach((item) => {
     item.addEventListener("click", function (event) {
       const pagina = event.currentTarget.dataset.page;
-      if (pagina) {
-        window.location.href = pagina;
-      }
+      if (pagina) window.location.href = pagina;
     });
   });
 
-  document
-    .querySelector(".bi-box-arrow-right")
-    .addEventListener("click", function () {
-      if (confirm("Deseja sair do sistema?")) {
-        localStorage.removeItem("usuarioLogado");
-        localStorage.removeItem("jwtToken");
-        localStorage.removeItem("instrutorId");
-        window.location.href = "Index.html";
-      }
-    });
+  const btnSair = document.querySelector(".bi-box-arrow-right");
+  if (btnSair) {
+      btnSair.addEventListener("click", function () {
+          if (confirm("Deseja sair do sistema?")) {
+            localStorage.removeItem("usuarioLogado");
+            localStorage.removeItem("jwtToken");
+            localStorage.removeItem("instrutorId");
+            window.location.href = "Index.html";
+          }
+      });
+  }
 
-  document.getElementById("iconHome").addEventListener("click", function () {
-    window.location.href = "Home.html";
-  });
+  const btnHome = document.getElementById("iconHome");
+  if (btnHome) {
+      btnHome.addEventListener("click", function () {
+        window.location.href = "Home.html";
+      });
+  }
 
-  // --- 2. LÓGICA DA PÁGINA DE EXERCÍCIOS ---
-
-  // Lógica da BARRA DE PESQUISA
+  // 2. Barra de Pesquisa
   const searchInput = document.querySelector(".search-input");
-  searchInput.addEventListener("input", function (e) {
-    const termoBusca = e.target.value.toLowerCase();
-    const exerciciosFiltrados = todosExercicios.filter((exercicio) =>
-      exercicio.nome.toLowerCase().includes(termoBusca)
-    );
-    renderizarTabela(exerciciosFiltrados);
-  });
+  if (searchInput) {
+      searchInput.addEventListener("input", function (e) {
+        const termoBusca = e.target.value.toLowerCase();
+        const exerciciosFiltrados = todosExercicios.filter((exercicio) =>
+          exercicio.nome.toLowerCase().includes(termoBusca)
+        );
+        renderizarTabela(exerciciosFiltrados);
+      });
+  }
 
-  // Botão "+ Cadastrar Exercício"
-  document
-    .getElementById("btCadastrarExercicio")
-    .addEventListener("click", function () {
-      window.location.href = "CadastroExercicio.html";
-    });
+  // 3. Botão Cadastrar
+  const btnCadastrar = document.getElementById("btCadastrarExercicio");
+  if (btnCadastrar) {
+      btnCadastrar.addEventListener("click", function () {
+        window.location.href = "CadastroExercicio.html";
+      });
+  }
 
-    // 👇 **** INÍCIO DA ATUALIZAÇÃO ****
-  // 6. Lógica de edição (funcionalidade futura)
-  // Adiciona um listener no 'tbody' (que é fixo) para pegar cliques
-  // nos ícones de lápis (que são dinâmicos)
-  document.querySelector("tbody").addEventListener("click", function (e) {
-    if (e.target && e.target.classList.contains("action-icon")) {
-      const exercicioId = e.target.getAttribute("data-exercicio-id");
-      
-      // Remove o alert() e redireciona
-      // alert(`(Em breve) Editando exercício com ID: ${exercicioId}.`);
-      window.location.href = `CadastroExercicio.html?id=${exercicioId}`;
-    }
-  });
-  // 👆 **** FIM DA ATUALIZAÇÃO ****
+  // 4. Delegação de Eventos (Editar e Excluir)
+  const tbody = document.querySelector("tbody");
+  if (tbody) {
+      tbody.addEventListener("click", function (e) {
+        // Editar
+        if (e.target.classList.contains("edit-btn")) {
+          const exercicioId = e.target.getAttribute("data-id");
+          window.location.href = `CadastroExercicio.html?id=${exercicioId}`;
+        }
+        // Excluir
+        if (e.target.classList.contains("delete-btn")) {
+          const exercicioId = e.target.getAttribute("data-id");
+          excluirExercicio(exercicioId);
+        }
+      });
+  }
 
-  // --- 3. INICIALIZAÇÃO ---
-  // Carrega a lista de exercícios da API assim que a página abre
+  // 5. Inicialização
   carregarExercicios();
 });

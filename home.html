@@ -50,26 +50,46 @@
 
     <!-- Conteúdo Principal -->
     <div class="content">
-      <h1 class="welcome-title">SEJA MUITO BEM VINDO</h1>
+      
+      <h1 class="welcome-title" id="welcomeTitle">SEJA MUITO BEM VINDO</h1>
 
-      <div class="stats-cards">
-        <div class="stat-card" id="dvTotAlunos">
-          <div class="stat-title">Total de Alunos</div>
-          <div class="stat-value total-alunos">1.250</div>
+      <div class="stats-cards" id="adminDashboard">
+        <div class="stat-card" id="cardAtivos">
+          <div class="stat-title">Alunos Ativos</div>
+          <div class="stat-value ativos" id="valAtivos">Carregando...</div>
         </div>
 
-        <div class="stat-card" id="dvAtivAlunos">
-          <div class="stat-title">Alunos ativos</div>
-          <div class="stat-value ativos">980</div>
+        <div class="stat-card" id="cardInativos">
+          <div class="stat-title">Alunos Inativos</div>
+          <div class="stat-value inativos" id="valInativos" style="color: #dc3545;">Carregando...</div>
         </div>
 
-        <div class="stat-card" id="dvNovosAlunos">
-          <div class="stat-title">Novos Alunos</div>
-          <div class="stat-value novos">11</div>
+        <div class="stat-card" id="cardNovos">
+          <div class="stat-title">Novos (30 dias)</div>
+          <div class="stat-value novos" id="valNovos">Carregando...</div>
         </div>
       </div>
-    </div>
 
+      <div id="alunoDashboard" style="display: none;">
+        <div class="treino-card">
+          <div class="treino-header">
+            <h2 id="tituloTreinoDia">Treino de Hoje</h2>
+            <span id="nomeTreinoDia" class="badge-treino">Carregando...</span>
+          </div>
+          
+          <div class="lista-exercicios" id="listaExerciciosHoje">
+            <p class="text-center">Buscando seu treino...</p>
+          </div>
+
+          <div class="treino-actions">
+            <button class="btn-ver-semana" id="btnVerSemana">
+              <i class="bi bi-calendar-week"></i> VER / EDITAR SEMANA COMPLETA
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- Bootstrap JS Bundle -->
@@ -78,6 +98,7 @@
   <!-- JavaScript para interatividade (opcional) -->
   <script src="Script/ScriptHome.js"></script>
 
+  <script src="Script/ScriptControleAcesso.js"></script>
 </body>
 
 </html>

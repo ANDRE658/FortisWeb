@@ -3,7 +3,6 @@ let todosInstrutores = [];
 
 /**
  * Função para renderizar a tabela com uma lista de instrutores
- * @param {Array} instrutores - A lista de instrutores a ser mostrada
  */
 function renderizarTabela(instrutores) {
   const tbody = document.querySelector(".table-container table tbody");
@@ -11,30 +10,51 @@ function renderizarTabela(instrutores) {
 
   if (instrutores.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="4" class="text-center">Nenhum instrutor encontrado.</td></tr>';
+      '<tr><td colspan="3" class="text-center">Nenhum instrutor ativo encontrado.</td></tr>';
     return;
   }
 
   instrutores.forEach((instrutor) => {
-    // O modelo Instrutor.java não tem "status". Vamos simular.
-    const statusHtml = '<span class="status-ativo">Ativo</span>';
-
     const newRow = `
       <tr>
         <td>${instrutor.nome}</td>
         <td>${instrutor.cpf}</td>
-        <td>${statusHtml}</td>
-        <td>
-          <label class="switch">
-            <input type="checkbox" checked>
-            <span class="slider"></span>
-          </label>
-          <i class="bi bi-pencil action-icon" data-instrutor-id="${instrutor.id}" title="Editar"></i>
+        <td class="text-center">
+          <i class="bi bi-pencil action-icon edit-btn" data-id="${instrutor.id}" title="Editar" style="margin-right: 15px; color: #00008B; cursor: pointer;"></i>
+          
+          <i class="bi bi-trash action-icon delete-btn" data-id="${instrutor.id}" title="Excluir" style="color: #dc3545; cursor: pointer;"></i>
         </td>
       </tr>
     `;
     tbody.innerHTML += newRow;
   });
+}
+
+/**
+ * Função para excluir (inativar) o instrutor
+ */
+async function excluirInstrutor(id) {
+    if (!confirm("Tem certeza que deseja excluir este instrutor? Ele não aparecerá mais na lista.")) {
+        return;
+    }
+
+    const token = localStorage.getItem("jwtToken");
+    try {
+        const response = await fetch(`http://localhost:8080/instrutor/excluir/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok || response.status === 204) {
+            alert("Instrutor excluído com sucesso!");
+            carregarInstrutores(); // Recarrega a lista
+        } else {
+            alert("Erro ao excluir o instrutor.");
+        }
+    } catch (error) {
+        console.error("Erro na exclusão:", error);
+        alert("Não foi possível conectar à API.");
+    }
 }
 
 /**
@@ -56,88 +76,92 @@ async function carregarInstrutores() {
       },
     });
 
+    // Tratamento para lista vazia (204 No Content)
+    if (response.status === 204) {
+       todosInstrutores = [];
+       renderizarTabela([]);
+       return;
+    }
+
     if (response.ok) {
       const instrutores = await response.json();
       todosInstrutores = instrutores; // Salva na lista global
       renderizarTabela(todosInstrutores); // Renderiza a tabela
     } else if (response.status === 403) {
-      alert("Sua sessão expirou ou você não tem permissão. Faça o login novamente.");
+      alert("Sua sessão expirou ou você não tem permissão.");
       window.location.href = "Index.html";
     } else {
       alert("Erro ao carregar instrutores. Código: " + response.status);
     }
   } catch (error) {
     console.error("Erro de rede:", error);
-    alert("Não foi possível conectar à API para listar os instrutores.");
+    const tbody = document.querySelector(".table-container table tbody");
+    if(tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Erro de conexão.</td></tr>';
   }
 }
 
 // --- Ponto de Entrada: O DOM foi carregado ---
 document.addEventListener("DOMContentLoaded", function () {
   
-  // 1. Carrega o nome do usuário
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Usuário";
-  document.getElementById("userName").textContent = nomeUsuario;
+  const elUser = document.getElementById("userName");
+  if(elUser) elUser.textContent = nomeUsuario;
 
-  // 2. Carrega a lista de instrutores da API
+  // Carrega a lista
   carregarInstrutores();
 
-  // 3. Adiciona a lógica da BARRA DE BUSCA
+  // Barra de Busca
   const searchInput = document.querySelector(".search-input");
-  searchInput.addEventListener("input", function (e) {
-    const termoBusca = e.target.value.toLowerCase();
-    
-    // Filtra a lista 'todosInstrutores'
-    const instrutoresFiltrados = todosInstrutores.filter(instrutor => 
-      instrutor.nome.toLowerCase().includes(termoBusca) ||
-      instrutor.cpf.includes(termoBusca)
-    );
-    
-    // Renderiza a tabela apenas com os instrutores filtrados
-    renderizarTabela(instrutoresFiltrados);
-  });
+  if(searchInput) {
+      searchInput.addEventListener("input", function (e) {
+        const termoBusca = e.target.value.toLowerCase();
+        const instrutoresFiltrados = todosInstrutores.filter(instrutor => 
+          instrutor.nome.toLowerCase().includes(termoBusca) ||
+          instrutor.cpf.includes(termoBusca)
+        );
+        renderizarTabela(instrutoresFiltrados);
+      });
+  }
 
-  // 4. Lógica de navegação (Menu)
+  // Delegação de Eventos (Editar e Excluir)
+  const tbody = document.querySelector("tbody");
+  if(tbody) {
+      tbody.addEventListener("click", function (e) {
+        // Editar
+        if (e.target.classList.contains("edit-btn")) {
+            const instrutorId = e.target.getAttribute("data-id");
+            window.location.href = `CadastroInstrutor.html?id=${instrutorId}`;
+        }
+        // Excluir
+        if (e.target.classList.contains("delete-btn")) {
+            const instrutorId = e.target.getAttribute("data-id");
+            excluirInstrutor(instrutorId);
+        }
+      });
+  }
+
+  // Navegação
   document.querySelectorAll(".nav-menu li").forEach(item => {
     item.addEventListener("click", function(event) {
-        const pagina = event.currentTarget.dataset.page; 
-        if (pagina) {
-            window.location.href = pagina;
-        }
+        const pagina = event.currentTarget.dataset.page;
+        if (pagina) window.location.href = pagina;
     });
   });
 
-  // 5. Botão de sair (Logout)
-  document
-    .querySelector(".bi-box-arrow-right")
-    .addEventListener("click", function () {
-      if (confirm("Deseja sair do sistema?")) {
-        localStorage.removeItem("usuarioLogado");
-        localStorage.removeItem("jwtToken");
-        localStorage.removeItem("instrutorId");
-        window.location.href = "Index.html";
-      }
-    });
+  const btnSair = document.querySelector(".bi-box-arrow-right");
+  if(btnSair) {
+      btnSair.addEventListener("click", function () {
+          if (confirm("Deseja sair do sistema?")) {
+            localStorage.clear();
+            window.location.href = "Index.html";
+          }
+        });
+  }
 
-  // 6. Botão Cadastrar Instrutor
-  document.getElementById("btCadastrarInstrutor").addEventListener("click", function () {
-    // O HTML já tem: onclick="window.location.href='cadastro-instrutor.html'"
-    // Mas vamos garantir que o nome do arquivo esteja correto.
-    // O seu HTML <head> linka para "Style/StyleCadastroInstrutor.css"
-    // E o seu form action é "Script/ScriptCadastroInstrutor"
-    // Mas o arquivo HTML é "CadastroInstrutor.html"
-    window.location.href = "CadastroInstrutor.html";
-  });
-
-  // 7. Lógica de edição (listener delegado)
-  document.querySelector("tbody").addEventListener("click", function(e) {
-    if (e.target && e.target.classList.contains('action-icon')) {
-      const instrutorId = e.target.getAttribute('data-instrutor-id');
-      
-      // 👇 **** ESTA É A MUDANÇA ****
-      // Remove o alert() e redireciona para a tela de cadastro
-      window.location.href = `CadastroInstrutor.html?id=${instrutorId}`;
-    }
-  });
-
+  const btnCadastrar = document.getElementById("btCadastrarInstrutor");
+  if(btnCadastrar) {
+      btnCadastrar.addEventListener("click", function () {
+        window.location.href = "CadastroInstrutor.html";
+      });
+  }
 });

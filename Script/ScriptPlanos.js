@@ -16,13 +16,11 @@ function renderizarTabela(planos) {
 
   if (planos.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="4" class="text-center">Nenhum plano cadastrado.</td></tr>';
+      '<tr><td colspan="4" class="text-center">Nenhum plano ativo encontrado.</td></tr>';
     return;
   }
 
   planos.forEach((plano) => {
-    // O modelo Plano.java não tem "status",
-    // então vamos assumir 'Ativo' como padrão, como no seu HTML estático.
     const statusHtml = '<span class="status-ativo">Ativo</span>';
 
     const newRow = `
@@ -31,16 +29,39 @@ function renderizarTabela(planos) {
         <td>${statusHtml}</td>
         <td>${formatarMoeda(plano.valor)}</td>
         <td>
-          <i class="bi bi-pencil action-icon" data-plano-id="${plano.id}"></i>
-          <label class="switch">
-            <input type="checkbox" checked>
-            <span class="slider"></span>
-          </label>
+          <i class="bi bi-pencil action-icon edit-btn" data-plano-id="${plano.id}" title="Editar" style="margin-right: 15px;"></i>
+          
+          <i class="bi bi-trash action-icon delete-btn" data-plano-id="${plano.id}" title="Excluir" style="color: #dc3545;"></i>
         </td>
       </tr>
     `;
     tbody.innerHTML += newRow;
   });
+}
+
+// Função para excluir (inativar) o plano
+async function excluirPlano(id) {
+    if (!confirm("Tem certeza que deseja excluir este plano? Ele não aparecerá mais para novos alunos.")) {
+        return;
+    }
+
+    const token = localStorage.getItem("jwtToken");
+    try {
+        const response = await fetch(`http://localhost:8080/plano/deletar/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok || response.status === 204) {
+            alert("Plano excluído com sucesso!");
+            carregarPlanos(); // Recarrega a lista (o plano sumirá)
+        } else {
+            alert("Erro ao excluir o plano.");
+        }
+    } catch (error) {
+        console.error("Erro na exclusão:", error);
+        alert("Não foi possível conectar à API.");
+    }
 }
 
 // Função principal para carregar os planos da API
@@ -60,6 +81,13 @@ async function carregarPlanos() {
       },
     });
 
+    // CORREÇÃO: Verifica o status 204 PRIMEIRO, antes de tentar ler o JSON
+    if (response.status === 204) {
+       todosPlanos = []; // Limpa a lista global
+       renderizarTabela([]); // Renderiza a tabela vazia
+       return; // Sai da função
+    }
+
     if (response.ok) {
       const planos = await response.json();
       todosPlanos = planos; // Salva na lista global
@@ -72,83 +100,70 @@ async function carregarPlanos() {
     }
   } catch (error) {
     console.error("Erro de rede:", error);
-    alert("Não foi possível conectar à API para listar os planos.");
+    // Removido o alert invasivo, deixando apenas o log
+    const tbody = document.querySelector(".table-container table tbody");
+    if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Erro de conexão.</td></tr>';
   }
 }
 
 // --- Ponto de Entrada: O DOM foi carregado ---
 document.addEventListener("DOMContentLoaded", function () {
-  // 1. Carrega o nome do usuário (como no seu código original)
   const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
   document.getElementById("userName").textContent = nomeUsuario;
 
-  // 2. Carrega a lista de planos da API
+  // Carrega a lista de planos
   carregarPlanos();
 
-  // 3. Adiciona a lógica da BARRA DE BUSCA
+  // Barra de Busca
   const searchInput = document.querySelector(".search-input");
-  searchInput.addEventListener("input", function (e) {
-    const termoBusca = e.target.value.toLowerCase();
+  if (searchInput) {
+      searchInput.addEventListener("input", function (e) {
+        const termoBusca = e.target.value.toLowerCase();
+        const planosFiltrados = todosPlanos.filter((plano) =>
+          plano.nome.toLowerCase().includes(termoBusca)
+        );
+        renderizarTabela(planosFiltrados);
+      });
+  }
 
-    // Filtra a lista 'todosPlanos'
-    const planosFiltrados = todosPlanos.filter((plano) =>
-      plano.nome.toLowerCase().includes(termoBusca)
-    );
+  // Delegação de Eventos para a Tabela (Editar e Excluir)
+  const tbody = document.querySelector("tbody");
+  tbody.addEventListener("click", function (e) {
+      
+      // Clique no Lápis (Editar)
+      if (e.target.classList.contains("edit-btn")) {
+          const planoId = e.target.getAttribute("data-plano-id");
+          window.location.href = `CadastroPlano.html?id=${planoId}`;
+      }
 
-    // Renderiza a tabela apenas com os planos filtrados
-    renderizarTabela(planosFiltrados);
+      // Clique na Lixeira (Excluir)
+      if (e.target.classList.contains("delete-btn")) {
+          const planoId = e.target.getAttribute("data-plano-id");
+          excluirPlano(planoId);
+      }
   });
 
-  // 4. Lógica de navegação (do seu código original)
+  // Navegação e Logout
   document.querySelectorAll(".nav-menu li").forEach((item) => {
     item.addEventListener("click", function (event) {
       const pagina = event.currentTarget.dataset.page;
-      if (pagina) {
-        window.location.href = pagina;
-      }
+      if (pagina) window.location.href = pagina;
     });
   });
 
-  // 5. Botão de sair (do seu código original)
-  document
-    .querySelector(".bi-box-arrow-right")
-    .addEventListener("click", function () {
+  document.querySelector(".bi-box-arrow-right").addEventListener("click", function () {
       if (confirm("Deseja sair do sistema?")) {
         localStorage.removeItem("usuarioLogado");
-        localStorage.removeItem("jwtToken"); // Limpa o token
+        localStorage.removeItem("jwtToken");
         window.location.href = "Index.html";
       }
     });
 
-  // 6. Botão de Home (do seu código original)
   document.getElementById("iconHome").addEventListener("click", function () {
     window.location.href = "Home.html";
   });
 
-  // 7. Botão Cadastrar Plano (do seu código original)
-  document
-    .getElementById("btCadastrarPlano")
-    .addEventListener("click", function () {
+  document.getElementById("btCadastrarPlano").addEventListener("click", function () {
       window.location.href = "CadastroPlano.html";
-    });
-  // 8. Lógica de edição (NOVO: torna os ícones de lápis funcionais)
-  document.querySelector("tbody").addEventListener("click", function (e) {
-    // Verifica se o que foi clicado é o ícone de lápis
-    if (e.target && e.target.classList.contains("action-icon")) {
-      // Pega o ID do plano que colocamos no 'data-plano-id'
-      const planoId = e.target.getAttribute("data-plano-id");
-
-      // Redireciona para a tela de cadastro, passando o ID na URL
-      window.location.href = `CadastroPlano.html?id=${planoId}`;
-    }
-  });
-
-  // 9. Lógica de edição (do seu código original, agora dinâmica)
-  document.querySelector("tbody").addEventListener("click", function (e) {
-    if (e.target && e.target.classList.contains("action-icon")) {
-      const planoId = e.target.getAttribute("data-plano-id");
-      alert(`Editando plano com ID: ${planoId}. (Implementação futura)`);
-      // window.location.href = `CadastroPlano.html?id=${planoId}`;
-    }
   });
 });

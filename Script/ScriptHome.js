@@ -1,38 +1,160 @@
-document.querySelectorAll(".nav-menu li").forEach((item) => {
-  // Note que mudei o parâmetro 'alunos' para 'event', que é o nome correto
-  item.addEventListener("click", function (event) {
-    // Pega o destino do atributo 'data-page' do item clicado
-    const pagina = event.currentTarget.dataset.page;
+document.addEventListener("DOMContentLoaded", function () {
+  // 1. Configuração Básica
+  const nomeUsuario = localStorage.getItem("usuarioLogado") || "Usuário";
+  const role = localStorage.getItem("userRole"); // Pega a role salva no login
+  const userElem = document.querySelector(".user-name");
+  
+  if (userElem) userElem.textContent = nomeUsuario;
 
-    if (pagina) {
-      window.location.href = pagina;
-    }
-  });
-});
-
-// Simulação de logout
-document
-  .querySelector(".bi-box-arrow-right")
-  .addEventListener("click", function () {
-    if (confirm("Deseja sair do sistema?")) {
-      window.location.href = "index.html"; // Redireciona para login
-    }
+  // Configura navegação do menu
+  document.querySelectorAll(".nav-menu li").forEach((item) => {
+    item.addEventListener("click", function (event) {
+      const pagina = event.currentTarget.dataset.page;
+      if (pagina) window.location.href = pagina;
+    });
   });
 
-dvTotAlunos.addEventListener("click", function () {
-  window.location.href = "Alunos.html";
-});
-dvAtivAlunos.addEventListener("click", function () {
-  window.location.href = "Alunos.html";
-});
-dvNovosAlunos.addEventListener("click", function () {
-  window.location.href = "Alunos.html";
+  // Configura Logout
+  const btnSair = document.querySelector(".bi-box-arrow-right");
+  if(btnSair) {
+      btnSair.addEventListener("click", function () {
+          if (confirm("Deseja sair do sistema?")) {
+            localStorage.clear();
+            window.location.href = "Index.html";
+          }
+      });
+  }
+
+  // 2. DECISÃO DE DASHBOARD: ALUNO vs ADM/INSTRUTOR
+  if (role === 'ROLE_ALUNO') {
+      configurarDashboardAluno();
+  } else {
+      configurarDashboardAdmin();
+  }
 });
 
-document.getElementById("fotoUsario").addEventListener("click", function () {
-  window.location.href = "MeusDados.html";
-});
+// --- LÓGICA DO ADMIN/INSTRUTOR ---
+function configurarDashboardAdmin() {
+    // Mostra cards, esconde treino
+    document.getElementById("adminDashboard").style.display = "flex";
+    document.getElementById("alunoDashboard").style.display = "none";
+    document.getElementById("welcomeTitle").textContent = "Painel Administrativo";
 
-btSuporte.addEventListener("click", function () {
-  window.location.href = "Suporte.html";
-});
+    carregarEstatisticas();
+
+    // Links dos cards
+    document.getElementById("cardAtivos").addEventListener("click", () => window.location.href = "Alunos.html");
+    document.getElementById("cardInativos").addEventListener("click", () => window.location.href = "Alunos.html");
+    document.getElementById("cardNovos").addEventListener("click", () => window.location.href = "Alunos.html");
+}
+
+async function carregarEstatisticas() {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) return;
+
+  try {
+    const response = await fetch("http://localhost:8080/aluno/estatisticas", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.ok) {
+      const stats = await response.json();
+      document.getElementById("valAtivos").textContent = stats.ativos;
+      document.getElementById("valInativos").textContent = stats.inativos;
+      document.getElementById("valNovos").textContent = stats.novos;
+    }
+  } catch (error) {
+    console.error("Erro stats:", error);
+  }
+}
+
+// --- LÓGICA DO ALUNO ---
+async function configurarDashboardAluno() {
+    // Esconde cards, mostra treino
+    document.getElementById("adminDashboard").style.display = "none";
+    document.getElementById("alunoDashboard").style.display = "block";
+    
+    const diasSemana = ["DOMINGO", "SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA", "SABADO"];
+    const diaHoje = diasSemana[new Date().getDay()]; // 0 = Domingo, 1 = Segunda...
+    
+    document.getElementById("welcomeTitle").textContent = `Bom treino, ${localStorage.getItem("usuarioLogado")}!`;
+    document.getElementById("tituloTreinoDia").textContent = `Treino de ${capitalize(diaHoje)}`;
+
+    const token = localStorage.getItem("jwtToken");
+    const emailUsuario = localStorage.getItem("usuarioLogado"); // O login é o email
+
+    try {
+        // 1. Busca TODAS as fichas (endpoint existente)
+        // Idealmente, teríamos um endpoint /meu-treino, mas vamos filtrar no front por enquanto
+        const response = await fetch("http://localhost:8080/ficha-treino/listar", {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+            const fichas = await response.json();
+            
+            // 2. Encontra a ficha deste aluno (pelo email)
+            const minhaFicha = fichas.find(f => f.aluno && f.aluno.email === emailUsuario);
+
+            if (minhaFicha) {
+                // 3. Busca os detalhes COMPLETOS desta ficha
+                const responseFicha = await fetch(`http://localhost:8080/ficha-treino/buscar/${minhaFicha.id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                if(responseFicha.ok) {
+                    const fichaCompleta = await responseFicha.json();
+                    
+                    // 4. Configura botão para "Ver Semana Completa" (que permite editar)
+                    const btnVerSemana = document.getElementById("btnVerSemana");
+                    btnVerSemana.onclick = () => {
+                        window.location.href = `CadastroTreino.html?id=${fichaCompleta.id}`;
+                    };
+
+                    // 5. Encontra o treino de HOJE
+                    const treinoHoje = fichaCompleta.diasDeTreino.find(d => d.diaSemana === diaHoje);
+                    
+                    renderizarTreinoDoDia(treinoHoje);
+                }
+            } else {
+                document.getElementById("listaExerciciosHoje").innerHTML = "<p>Você ainda não possui uma ficha de treino cadastrada.</p>";
+                document.getElementById("btnVerSemana").style.display = "none";
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao carregar treino:", error);
+        document.getElementById("listaExerciciosHoje").innerHTML = "<p style='color:red'>Erro ao carregar treino.</p>";
+    }
+}
+
+function renderizarTreinoDoDia(treino) {
+    const container = document.getElementById("listaExerciciosHoje");
+    container.innerHTML = "";
+
+    if (!treino || !treino.itensTreino || treino.itensTreino.length === 0) {
+        container.innerHTML = "<p>Descanso! Nenhum treino cadastrado para hoje.</p>";
+        document.getElementById("nomeTreinoDia").textContent = "Descanso";
+        document.getElementById("nomeTreinoDia").style.backgroundColor = "#28a745"; // Verde
+        return;
+    }
+
+    document.getElementById("nomeTreinoDia").textContent = treino.nome || "Treino do Dia";
+
+    treino.itensTreino.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "item-exercicio";
+        
+        // Pega o nome correto do exercício (do DTO)
+        const nomeExercicio = item.nomeExercicio || "Exercício"; 
+
+        div.innerHTML = `
+            <span class="nome-exercicio">${nomeExercicio}</span>
+            <span class="detalhes-exercicio">${item.series}x ${item.repeticoes}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
