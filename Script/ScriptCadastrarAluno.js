@@ -66,8 +66,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     try {
-      // IMPORTANTE: Certifique-se de que este endpoint retorne o aluno COM as matrículas e endereço
-      // O seu endpoint /aluno/buscar/{id} deve retornar o objeto completo.
       const response = await fetch(
         `http://localhost:8080/aluno/buscar/${alunoId}`,
         {
@@ -96,25 +94,24 @@ document.addEventListener("DOMContentLoaded", function () {
           document.getElementById("cidade").value = aluno.endereco.cidade || "";
           document.getElementById("estado").value = aluno.endereco.estado || "";
           document.getElementById("cep").value = aluno.endereco.cep || "";
-          
-          // --- CORREÇÃO DO BAIRRO ---
-          // Agora que adicionamos 'bairro' no Java, ele virá no JSON
           const bairroInput = document.getElementById("bairro");
           if (bairroInput) bairroInput.value = aluno.endereco.bairro || "";
         }
         
-        // --- CORREÇÃO DA SELEÇÃO DO PLANO ---
-        // Verifica se o aluno tem matrículas e pega o plano da primeira encontrada
+        // --- CORREÇÃO: SELECIONAR PLANO E INSTRUTOR ---
         if (aluno.matriculaList && aluno.matriculaList.length > 0) {
-            // Procura uma matrícula que tenha um plano
-            const matriculaComPlano = aluno.matriculaList.find(m => m.plano);
-            if (matriculaComPlano) {
-                const planoSelect = document.getElementById("plano");
-                // Precisamos esperar o carregamento dos planos terminar antes de selecionar?
-                // Como chamamos carregarPlanos() antes de carregarDadosDoAluno() no final do script,
-                // e carregarPlanos é async mas não esperamos com 'await' lá embaixo, pode ter concorrência.
-                // Mas se o valor já estiver na lista, isso vai funcionar:
-                planoSelect.value = matriculaComPlano.plano.id;
+            
+            // Pega a primeira matrícula válida (supomos que só tenha uma)
+            const matricula = aluno.matriculaList[0];
+
+            // Seleciona o Plano
+            if (matricula.plano) {
+                document.getElementById("plano").value = matricula.plano.id;
+            }
+            
+            // Seleciona o Instrutor
+            if (matricula.instrutor) {
+                document.getElementById("instrutorSelect").value = matricula.instrutor.id;
             }
         }
 
@@ -134,7 +131,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!token) {
       selectPlano.innerHTML = '<option value="">Falha (sem token)</option>';
-      return;
+      return Promise.reject(new Error("Sem token"));
     }
 
     try {
@@ -143,10 +140,9 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Tratamento para lista vazia (204)
       if (response.status === 204) {
           selectPlano.innerHTML = '<option value="">Nenhum plano ativo</option>';
-          return;
+          return Promise.resolve();
       }
 
       if (response.ok) {
@@ -161,12 +157,57 @@ document.addEventListener("DOMContentLoaded", function () {
           option.textContent = `${plano.nome} (R$ ${valorFormatado})`;
           selectPlano.appendChild(option);
         });
+        return Promise.resolve();
       } else {
          throw new Error('Falha ao buscar planos: ' + response.status);
       }
     } catch (error) {
       console.error("Erro ao carregar planos:", error);
       selectPlano.innerHTML = '<option value="">Erro ao carregar planos</option>';
+      return Promise.reject(error);
+    }
+  }
+
+  // --- NOVA FUNÇÃO PARA CARREGAR INSTRUTORES ---
+  async function carregarInstrutores() {
+    const token = localStorage.getItem("jwtToken");
+    const selectInstrutor = document.getElementById("instrutorSelect");
+
+    if (!token) {
+      selectInstrutor.innerHTML = '<option value="">Falha (sem token)</option>';
+      return Promise.reject(new Error("Sem token"));
+    }
+
+    try {
+      const response = await fetch("http://localhost:8080/instrutor/listar", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.status === 204) {
+          selectInstrutor.innerHTML = '<option value="">Nenhum instrutor</option>';
+          return Promise.resolve();
+      }
+
+      if (response.ok) {
+        const instrutores = await response.json();
+        
+        selectInstrutor.innerHTML = '<option value="">Selecione um instrutor</option>'; 
+        
+        instrutores.forEach(instrutor => {
+          const option = document.createElement('option');
+          option.value = instrutor.id;
+          option.textContent = instrutor.nome;
+          selectInstrutor.appendChild(option);
+        });
+        return Promise.resolve();
+      } else {
+         throw new Error('Falha ao buscar instrutores: ' + response.status);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar instrutores:", error);
+      selectInstrutor.innerHTML = '<option value="">Erro ao carregar</option>';
+      return Promise.reject(error);
     }
   }
 
@@ -196,16 +237,18 @@ document.addEventListener("DOMContentLoaded", function () {
             altura: parseFloat(document.getElementById("altura").value),
             peso: parseFloat(document.getElementById("peso").value),
             
-            // OBJETO ENDEREÇO CORRIGIDO
             endereco: {
               rua: document.getElementById("rua").value,
               cidade: document.getElementById("cidade").value,
               estado: document.getElementById("estado").value,
               cep: document.getElementById("cep").value,
-              bairro: document.getElementById("bairro").value // <-- O CAMPO QUE FALTAVA
+              bairro: document.getElementById("bairro").value
             },
             
-            planoId: document.getElementById("plano").value
+            planoId: document.getElementById("plano").value,
+
+            // --- CORREÇÃO: ADICIONAR INSTRUTOR AO SALVAR/ATUALIZAR ---
+            instrutorId: document.getElementById("instrutorSelect").value 
           };
 
           if (!modoEdicao) {
@@ -241,9 +284,16 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
+  // --- INICIALIZAÇÃO DA PÁGINA ---
+  
   // Função auto-executável async para garantir a ordem
   (async function init() {
-      await carregarPlanos(); // Espera os planos carregarem
-      await carregarDadosDoAluno(); // Só depois carrega o aluno e seleciona o plano
+      try {
+        await carregarPlanos(); // 1. Espera os planos carregarem
+        await carregarInstrutores(); // 2. Espera os instrutores carregarem
+        await carregarDadosDoAluno(); // 3. Só depois carrega o aluno (para selecionar os dropdowns)
+      } catch (error) {
+          console.error("Falha ao inicializar a página:", error);
+      }
   })();
 });

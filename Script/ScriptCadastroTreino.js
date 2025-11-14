@@ -220,11 +220,14 @@ async function salvarFichaCompleta(e) {
         const series = linha.querySelector(".input-serie").value;
         const repeticoes = linha.querySelector(".input-rep").value;
 
-        if (!exercicioId || !series || !repeticoes) {
-          alert(
-            `Treino de ${dia}: Preencha todos os campos dos exercícios.`
-          );
-          return;
+        // Validação: Garante que o usuário selecionou um exercício
+        if (!exercicioId) { // Se for "" ou null
+            alert(`Treino de ${dia}: Você adicionou uma linha de exercício mas não selecionou qual é.`);
+            return;
+        }
+        if (!series || !repeticoes) {
+           alert(`Treino de ${dia}: Preencha as Séries e Repetições para o exercício "${linha.querySelector(".exercicio-select option:checked").text}".`);
+           return;
         }
 
         // DTO de salvar espera "exercicioId"
