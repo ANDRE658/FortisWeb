@@ -13,15 +13,20 @@ function aplicarPermissoesDeMenu() {
             'Alunos.html', 
             'Planos.html', 
             'Instrutor.html', 
-            'Relatorios.html'
+            'Relatorios.html',
+            'Suporte.html'
         ],
         'ROLE_INSTRUTOR': [
+            'MeusDados.html', // <--- ADICIONE AQUI
             'Alunos.html', 
             'Treinos.html', 
-            'Exercicios.html'
+            'Exercicios.html',
+            'Suporte.html'
         ],
         'ROLE_ALUNO': [
-            'Treinos.html' // O Aluno vê Treinos, mas vamos mudar o link
+            'MeusDados.html', // <--- ADICIONE AQUI // O Aluno vê Treinos, mas vamos mudar o link
+            'Treinos.html',
+            'Suporte.html'
         ]
     };
 

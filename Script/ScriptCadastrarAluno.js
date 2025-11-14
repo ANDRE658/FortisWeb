@@ -1,3 +1,72 @@
+// === FUNÇÕES DE MÁSCARA (NOVO) ===
+function formatarCPF(cpf) {
+  cpf = cpf.replace(/\D/g, ""); // Remove tudo que não é dígito
+  cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2"); // Coloca um ponto entre o terceiro e o quarto dígitos
+  cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2"); // Coloca um ponto entre o sexto e o sétimo dígitos
+  cpf = cpf.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); // Coloca um hífen antes dos dois últimos dígitos
+  return cpf;
+}
+
+function formatarTelefone(tel) {
+  tel = tel.replace(/\D/g, "");
+  tel = tel.replace(/^(\d{2})(\d)/g, "($1) $2"); // Coloca parênteses em volta dos dois primeiros dígitos
+  tel = tel.replace(/(\d{5})(\d)/, "$1-$2"); // Coloca hífen depois do quinto dígito (para celular)
+  return tel;
+}
+
+function formatarCEP(cep) {
+  cep = cep.replace(/\D/g, "");
+  cep = cep.replace(/^(\d{5})(\d)/, "$1-$2"); // Coloca hífen depois do quinto dígito
+  return cep;
+}
+
+// === FUNÇÃO VIACEP (NOVO) ===
+async function buscarCEP() {
+  const cepInput = document.getElementById("cep");
+  const ruaInput = document.getElementById("rua");
+  const bairroInput = document.getElementById("bairro");
+  const cidadeInput = document.getElementById("cidade");
+  const estadoInput = document.getElementById("estado");
+
+  const cep = cepInput.value.replace(/\D/g, ""); // Limpa o CEP
+
+  if (cep.length !== 8) {
+    return; // Não busca se o CEP estiver incompleto
+  }
+
+  // Feedback visual de "carregando"
+  ruaInput.value = "Buscando...";
+  bairroInput.value = "Buscando...";
+  cidadeInput.value = "Buscando...";
+  estadoInput.value = "...";
+  
+  try {
+    const response = await fetch(`http://localhost:8080/consulta-cep/${cep}`);
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.cep) { 
+        ruaInput.value = data.logradouro;
+        bairroInput.value = data.bairro;
+        cidadeInput.value = data.localidade;
+        estadoInput.value = data.uf;
+        document.getElementById("numero").focus(); // Pula para o campo número
+      } else {
+        throw new Error("CEP não encontrado.");
+      }
+    } else {
+      throw new Error("Erro ao buscar CEP.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível localizar o CEP. Por favor, digite manualmente.");
+    ruaInput.value = "";
+    bairroInput.value = "";
+    cidadeInput.value = "";
+    estadoInput.value = "";
+  }
+}
+
 // Aguarda o DOM carregar
 document.addEventListener("DOMContentLoaded", function () {
   
@@ -30,13 +99,36 @@ document.addEventListener("DOMContentLoaded", function () {
   if (btnSair) {
       btnSair.addEventListener("click", function () {
         if (confirm("Deseja sair do sistema?")) {
-          localStorage.removeItem("usuarioLogado");
-          localStorage.removeItem("jwtToken"); 
-          localStorage.removeItem("instrutorId");
+          localStorage.clear();
           window.location.href = "Index.html";
         }
       });
   }
+
+  // --- (NOVO) CONECTA AS MÁSCARAS E O VIACEP ---
+  const cpfInput = document.getElementById("cpf");
+  if (cpfInput) {
+    cpfInput.addEventListener("input", (e) => {
+      e.target.value = formatarCPF(e.target.value);
+    });
+  }
+
+  const telInput = document.getElementById("telefone");
+  if (telInput) {
+    telInput.addEventListener("input", (e) => {
+      e.target.value = formatarTelefone(e.target.value);
+    });
+  }
+  
+  const cepInput = document.getElementById("cep");
+  if (cepInput) {
+    cepInput.addEventListener("input", (e) => {
+      e.target.value = formatarCEP(e.target.value);
+    });
+    cepInput.addEventListener("blur", buscarCEP);
+  }
+  // --- FIM DO NOVO TRECHO ---
+
 
   // --- FUNÇÃO PARA CARREGAR DADOS (MODO EDIÇÃO) ---
   async function carregarDadosDoAluno() {
@@ -79,8 +171,8 @@ document.addEventListener("DOMContentLoaded", function () {
         
         document.getElementById("nome").value = aluno.nome || "";
         document.getElementById("email").value = aluno.email || "";
-        document.getElementById("cpf").value = aluno.cpf || "";
-        document.getElementById("telefone").value = aluno.telefone || "";
+        document.getElementById("cpf").value = formatarCPF(aluno.cpf || ""); // Formata
+        document.getElementById("telefone").value = formatarTelefone(aluno.telefone || ""); // Formata
         document.getElementById("sexo").value = aluno.sexo || "";
         
         if (aluno.dataNascimento) {
@@ -93,23 +185,17 @@ document.addEventListener("DOMContentLoaded", function () {
           document.getElementById("rua").value = aluno.endereco.rua || "";
           document.getElementById("cidade").value = aluno.endereco.cidade || "";
           document.getElementById("estado").value = aluno.endereco.estado || "";
-          document.getElementById("cep").value = aluno.endereco.cep || "";
-          const bairroInput = document.getElementById("bairro");
-          if (bairroInput) bairroInput.value = aluno.endereco.bairro || "";
+          document.getElementById("cep").value = formatarCEP(aluno.endereco.cep || ""); // Formata
+          document.getElementById("bairro").value = aluno.endereco.bairro || "";
+          // --- (NOVO) CARREGA O NÚMERO ---
+          document.getElementById("numero").value = aluno.endereco.numero || "";
         }
         
-        // --- CORREÇÃO: SELECIONAR PLANO E INSTRUTOR ---
         if (aluno.matriculaList && aluno.matriculaList.length > 0) {
-            
-            // Pega a primeira matrícula válida (supomos que só tenha uma)
             const matricula = aluno.matriculaList[0];
-
-            // Seleciona o Plano
             if (matricula.plano) {
                 document.getElementById("plano").value = matricula.plano.id;
             }
-            
-            // Seleciona o Instrutor
             if (matricula.instrutor) {
                 document.getElementById("instrutorSelect").value = matricula.instrutor.id;
             }
@@ -147,9 +233,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (response.ok) {
         const planos = await response.json();
-        
         selectPlano.innerHTML = '<option value="">Selecione um plano</option>'; 
-        
         planos.forEach(plano => {
           const valorFormatado = parseFloat(plano.valor).toFixed(2).replace('.', ',');
           const option = document.createElement('option');
@@ -168,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // --- NOVA FUNÇÃO PARA CARREGAR INSTRUTORES ---
+  // --- FUNÇÃO PARA CARREGAR INSTRUTORES ---
   async function carregarInstrutores() {
     const token = localStorage.getItem("jwtToken");
     const selectInstrutor = document.getElementById("instrutorSelect");
@@ -191,9 +275,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (response.ok) {
         const instrutores = await response.json();
-        
         selectInstrutor.innerHTML = '<option value="">Selecione um instrutor</option>'; 
-        
         instrutores.forEach(instrutor => {
           const option = document.createElement('option');
           option.value = instrutor.id;
@@ -226,12 +308,11 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
           }
           
-          // Coleta os dados do formulário
           const alunoData = {
             nome: document.getElementById("nome").value,
             email: document.getElementById("email").value,
-            cpf: document.getElementById("cpf").value, 
-            telefone: document.getElementById("telefone").value,
+            cpf: document.getElementById("cpf").value.replace(/\D/g, ""), // Limpa máscara
+            telefone: document.getElementById("telefone").value.replace(/\D/g, ""), // Limpa máscara
             sexo: document.getElementById("sexo").value,
             dataNascimento: document.getElementById("nascimento").value, 
             altura: parseFloat(document.getElementById("altura").value),
@@ -241,13 +322,13 @@ document.addEventListener("DOMContentLoaded", function () {
               rua: document.getElementById("rua").value,
               cidade: document.getElementById("cidade").value,
               estado: document.getElementById("estado").value,
-              cep: document.getElementById("cep").value,
-              bairro: document.getElementById("bairro").value
+              cep: document.getElementById("cep").value.replace(/\D/g, ""), // Limpa máscara
+              bairro: document.getElementById("bairro").value,
+              // --- (NOVO) ENVIA O NÚMERO ---
+              numero: document.getElementById("numero").value
             },
             
             planoId: document.getElementById("plano").value,
-
-            // --- CORREÇÃO: ADICIONAR INSTRUTOR AO SALVAR/ATUALIZAR ---
             instrutorId: document.getElementById("instrutorSelect").value 
           };
 
@@ -285,13 +366,11 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- INICIALIZAÇÃO DA PÁGINA ---
-  
-  // Função auto-executável async para garantir a ordem
   (async function init() {
       try {
-        await carregarPlanos(); // 1. Espera os planos carregarem
-        await carregarInstrutores(); // 2. Espera os instrutores carregarem
-        await carregarDadosDoAluno(); // 3. Só depois carrega o aluno (para selecionar os dropdowns)
+        await carregarPlanos(); 
+        await carregarInstrutores(); 
+        await carregarDadosDoAluno(); 
       } catch (error) {
           console.error("Falha ao inicializar a página:", error);
       }

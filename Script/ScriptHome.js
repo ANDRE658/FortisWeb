@@ -25,22 +25,29 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  // 2. DECISÃO DE DASHBOARD: ALUNO vs ADM/INSTRUTOR
+  // ========================================================
+  // === INÍCIO DA LÓGICA ATUALIZADA (DIVISÃO DE ROLES) ===
+  // ========================================================
   if (role === 'ROLE_ALUNO') {
       configurarDashboardAluno();
+  } else if (role === 'ROLE_INSTRUTOR') {
+      configurarDashboardInstrutor();
+  } else if (role === 'ROLE_GERENCIADOR') {
+      configurarDashboardGerenciador();
   } else {
-      configurarDashboardAdmin();
+      // Fallback para caso a role não seja nenhuma (ou seja admin antigo)
+      configurarDashboardGerenciador();
   }
 });
 
-// --- LÓGICA DO ADMIN/INSTRUTOR ---
-function configurarDashboardAdmin() {
+// --- LÓGICA DO GERENCIADOR (ADMIN) ---
+function configurarDashboardGerenciador() {
     // Mostra cards, esconde treino
     document.getElementById("adminDashboard").style.display = "flex";
     document.getElementById("alunoDashboard").style.display = "none";
     document.getElementById("welcomeTitle").textContent = "Painel Administrativo";
 
-    carregarEstatisticas();
+    carregarEstatisticasGlobais();
 
     // Links dos cards
     document.getElementById("cardAtivos").addEventListener("click", () => window.location.href = "Alunos.html");
@@ -48,11 +55,12 @@ function configurarDashboardAdmin() {
     document.getElementById("cardNovos").addEventListener("click", () => window.location.href = "Alunos.html");
 }
 
-async function carregarEstatisticas() {
+async function carregarEstatisticasGlobais() {
   const token = localStorage.getItem("jwtToken");
   if (!token) return;
 
   try {
+    // Endpoint antigo (Global)
     const response = await fetch("http://localhost:8080/aluno/estatisticas", {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -64,11 +72,60 @@ async function carregarEstatisticas() {
       document.getElementById("valNovos").textContent = stats.novos;
     }
   } catch (error) {
-    console.error("Erro stats:", error);
+    console.error("Erro stats globais:", error);
   }
 }
 
-// --- LÓGICA DO ALUNO ---
+
+// --- (NOVO) LÓGICA DO INSTRUTOR ---
+function configurarDashboardInstrutor() {
+    // Mostra cards, esconde treino
+    document.getElementById("adminDashboard").style.display = "flex";
+    document.getElementById("alunoDashboard").style.display = "none";
+    
+    // Personaliza o título
+    const nomeUsuario = localStorage.getItem("usuarioLogado") || "Instrutor";
+    document.getElementById("welcomeTitle").textContent = `Painel do Instrutor: ${nomeUsuario}`;
+
+    carregarEstatisticasInstrutor(); // Chama a nova função de fetch
+
+    // Links dos cards
+    document.getElementById("cardAtivos").addEventListener("click", () => window.location.href = "Alunos.html");
+    document.getElementById("cardInativos").addEventListener("click", () => window.location.href = "Alunos.html");
+    document.getElementById("cardNovos").addEventListener("click", () => window.location.href = "Alunos.html");
+}
+
+async function carregarEstatisticasInstrutor() {
+  const token = localStorage.getItem("jwtToken");
+  // O instrutorId é salvo no localStorage durante o login
+  const instrutorId = localStorage.getItem("instrutorId"); 
+  
+  if (!token || !instrutorId) {
+      console.error("Token ou ID do instrutor não encontrado no localStorage.");
+      return;
+  }
+
+  try {
+    // Chama o NOVO endpoint
+    const response = await fetch(`http://localhost:8080/aluno/estatisticas/instrutor/${instrutorId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.ok) {
+      const stats = await response.json();
+      document.getElementById("valAtivos").textContent = stats.ativos;
+      document.getElementById("valInativos").textContent = stats.inativos;
+      document.getElementById("valNovos").textContent = stats.novos;
+    } else {
+      console.error("Falha ao buscar estatísticas do instrutor:", response.status);
+    }
+  } catch (error) {
+    console.error("Erro stats instrutor:", error);
+  }
+}
+
+
+// --- LÓGICA DO ALUNO (Sem alteração) ---
 async function configurarDashboardAluno() {
     // Esconde cards, mostra treino
     document.getElementById("adminDashboard").style.display = "none";
@@ -85,7 +142,6 @@ async function configurarDashboardAluno() {
 
     try {
         // 1. Busca TODAS as fichas (endpoint existente)
-        // Idealmente, teríamos um endpoint /meu-treino, mas vamos filtrar no front por enquanto
         const response = await fetch("http://localhost:8080/ficha-treino/listar", {
             headers: { Authorization: `Bearer ${token}` },
         });
@@ -105,10 +161,11 @@ async function configurarDashboardAluno() {
                 if(responseFicha.ok) {
                     const fichaCompleta = await responseFicha.json();
                     
-                    // 4. Configura botão para "Ver Semana Completa" (que permite editar)
+                    // 4. Configura botão para "Ver Semana Completa"
                     const btnVerSemana = document.getElementById("btnVerSemana");
                     btnVerSemana.onclick = () => {
-                        window.location.href = `VerSemana.html?id=${fichaCompleta.id}`;
+                        // (CORREÇÃO: Aluno deve ir para VerSemana.html, não CadastroTreino.html)
+                        window.location.href = `VerSemana.html`;
                     };
 
                     // 5. Encontra o treino de HOJE
@@ -145,7 +202,7 @@ function renderizarTreinoDoDia(treino) {
         div.className = "item-exercicio";
         
         // Pega o nome correto do exercício (do DTO)
-        const nomeExercicio = item.nomeExercicio || "Exercício"; 
+        const nomeExercicio = (item.exercicio && item.exercicio.nome) ? item.exercicio.nome : "Exercício"; 
 
         div.innerHTML = `
             <span class="nome-exercicio">${nomeExercicio}</span>
@@ -156,5 +213,6 @@ function renderizarTreinoDoDia(treino) {
 }
 
 function capitalize(str) {
+    if (!str) return "";
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
