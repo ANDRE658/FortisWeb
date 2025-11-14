@@ -108,7 +108,7 @@ async function configurarDashboardAluno() {
                     // 4. Configura botão para "Ver Semana Completa" (que permite editar)
                     const btnVerSemana = document.getElementById("btnVerSemana");
                     btnVerSemana.onclick = () => {
-                        window.location.href = `CadastroTreino.html?id=${fichaCompleta.id}`;
+                        window.location.href = `VerSemana.html?id=${fichaCompleta.id}`;
                     };
 
                     // 5. Encontra o treino de HOJE
