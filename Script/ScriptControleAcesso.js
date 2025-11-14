@@ -20,6 +20,7 @@ function aplicarPermissoesDeMenu() {
             'MeusDados.html', // <--- ADICIONE AQUI
             'Alunos.html', 
             'Treinos.html', 
+            'VisualizarAluno.html',
             'Exercicios.html',
             'Suporte.html'
         ],

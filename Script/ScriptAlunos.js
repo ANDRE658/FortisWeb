@@ -6,6 +6,7 @@ let todosAlunos = [];
  */
 function renderizarTabela(alunos) {
   const tbody = document.querySelector(".table-container table tbody");
+  const userRole = localStorage.getItem("userRole"); // Pega a role
   
   if (!tbody) return;
   tbody.innerHTML = ""; // Limpa a tabela
@@ -25,6 +26,32 @@ function renderizarTabela(alunos) {
         }
     }
 
+    // --- LÓGICA DE AÇÃO 1 (EDITAR ou VISUALIZAR) ---
+    let acaoIcon = '';
+    let acaoClasse = '';
+    let acaoTitulo = '';
+    
+    if (userRole === 'ROLE_GERENCIADOR') {
+        acaoIcon = 'bi-pencil'; // Lápis de Edição
+        acaoClasse = 'edit-btn'; // Classe JS para editar
+        acaoTitulo = 'Editar Aluno';
+    } else if (userRole === 'ROLE_INSTRUTOR') {
+        acaoIcon = 'bi-eye'; // Olho de Visualização
+        acaoClasse = 'view-btn'; // Classe JS para visualizar
+        acaoTitulo = 'Visualizar Aluno';
+    }
+    
+    // --- LÓGICA DE AÇÃO 2 (EXCLUIR ou TREINO) ---
+    let segundaAcaoHtml = '';
+    if (userRole === 'ROLE_GERENCIADOR') {
+        // Gerenciador VÊ o botão de excluir
+        segundaAcaoHtml = `<i class="bi bi-trash action-icon delete-btn" data-id="${aluno.id}" title="Excluir" style="color: #dc3545; cursor: pointer; font-size: 1.2rem;"></i>`;
+    } else if (userRole === 'ROLE_INSTRUTOR') {
+        // Instrutor VÊ o botão de Ficha de Treino
+        segundaAcaoHtml = `<i class="bi bi-list-task action-icon treino-btn" data-id="${aluno.id}" title="Ver Ficha de Treino" style="color: #007bff; cursor: pointer; font-size: 1.2rem;"></i>`;
+    }
+    // --- FIM DA NOVA LÓGICA ---
+
     // Proteção contra nulos
     const nome = aluno.nome || "Sem Nome";
     const cpf = aluno.cpf || "---";
@@ -35,9 +62,9 @@ function renderizarTabela(alunos) {
         <td>${cpf}</td>
         <td>${nomePlano}</td>
         <td class="text-center">
-          <i class="bi bi-pencil action-icon edit-btn" data-id="${aluno.id}" title="Editar" style="color: #00008B; cursor: pointer; margin-right: 15px; font-size: 1.2rem;"></i>
+          <i class="bi ${acaoIcon} action-icon ${acaoClasse}" data-id="${aluno.id}" title="${acaoTitulo}" style="color: #00008B; cursor: pointer; margin-right: 15px; font-size: 1.2rem;"></i>
           
-          <i class="bi bi-trash action-icon delete-btn" data-id="${aluno.id}" title="Excluir" style="color: #dc3545; cursor: pointer; font-size: 1.2rem;"></i>
+          ${segundaAcaoHtml}
         </td>
       </tr>
     `;
@@ -47,11 +74,15 @@ function renderizarTabela(alunos) {
 
 // --- Funções de Ação ---
 
-function editarAluno(id) {
+function editarAluno(id) { // Ação do Gerenciador
     window.location.href = `CadastroAluno.html?id=${id}`;
 }
 
-async function excluirAluno(id) {
+function visualizarAluno(id) { // Ação do Instrutor
+    window.location.href = `VisualizarAluno.html?id=${id}`;
+}
+
+async function excluirAluno(id) { // Ação do Gerenciador
     if (!confirm("Tem certeza que deseja excluir este aluno?")) return;
 
     const token = localStorage.getItem('jwtToken');
@@ -74,6 +105,49 @@ async function excluirAluno(id) {
     }
 }
 
+/**
+ * NOVA FUNÇÃO: Busca a ficha do aluno e redireciona para a tela de treino.
+ */
+async function irParaTreinoDoAluno(alunoId) {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+        alert("Sessão expirada.");
+        return;
+    }
+    
+    // O instrutor logado só recebe suas próprias fichas,
+    // então podemos buscar na lista de fichas dele.
+    try {
+        const response = await fetch('http://localhost:8080/ficha-treino/listar', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.status === 204) { // Nenhuma ficha encontrada
+            alert('Este aluno ainda não possui uma ficha de treino. Você pode criar uma na tela de "Treinos".');
+            return;
+        }
+        
+        if (response.ok) {
+            const fichas = await response.json();
+            // Procura a ficha que pertence ao aluno clicado
+            const fichaDoAluno = fichas.find(f => f.aluno && f.aluno.id == alunoId);
+            
+            if (fichaDoAluno) {
+                // Encontrou a ficha, vai para a edição
+                window.location.href = `CadastroTreino.html?id=${fichaDoAluno.id}`;
+            } else {
+                alert('Este aluno ainda não possui uma ficha de treino cadastrada. Você pode criar uma na tela de "Treinos".');
+            }
+        } else {
+            throw new Error('Falha ao buscar fichas de treino.');
+        }
+    } catch (error) {
+        console.error("Erro ao buscar ficha:", error);
+        alert("Não foi possível encontrar a ficha de treino deste aluno.");
+    }
+}
+
+
 // --- Carregamento Principal ---
 async function carregarAlunos() {
   const token = localStorage.getItem('jwtToken');
@@ -89,7 +163,6 @@ async function carregarAlunos() {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    // Tratamento para lista vazia (204 No Content)
     if (response.status === 204) {
         todosAlunos = [];
         renderizarTabela([]);
@@ -135,13 +208,24 @@ document.addEventListener("DOMContentLoaded", function () {
   const tbody = document.querySelector(".table-container table tbody");
   if (tbody) {
       tbody.addEventListener("click", function(e) {
-          if (e.target.classList.contains('edit-btn')) {
+          
+          if (e.target.classList.contains('edit-btn')) { // Gerenciador
               const id = e.target.getAttribute('data-id');
               editarAluno(id);
           }
-          if (e.target.classList.contains('delete-btn')) {
+          if (e.target.classList.contains('view-btn')) { // Instrutor
+              const id = e.target.getAttribute('data-id');
+              visualizarAluno(id);
+          }
+          if (e.target.classList.contains('delete-btn')) { // Gerenciador
               const id = e.target.getAttribute('data-id');
               excluirAluno(id);
+          }
+          // --- NOVO EVENTO ---
+          if (e.target.classList.contains('treino-btn')) { // Instrutor
+              const id = e.target.getAttribute('data-id');
+              irParaTreinoDoAluno(id);
+         
           }
       });
   }
