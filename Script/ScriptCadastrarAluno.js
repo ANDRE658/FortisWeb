@@ -174,6 +174,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("cpf").value = formatarCPF(aluno.cpf || ""); // Formata
         document.getElementById("telefone").value = formatarTelefone(aluno.telefone || ""); // Formata
         document.getElementById("sexo").value = aluno.sexo || "";
+        document.getElementById("diaVencimento").value = aluno.diaVencimento || "";
         
         if (aluno.dataNascimento) {
             document.getElementById("nascimento").value = new Date(aluno.dataNascimento).toISOString().split('T')[0];
