@@ -40,11 +40,16 @@ addEventListener("DOMContentLoaded", function () {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json(); // data agora é { token, nomeUsuario }
 
         // 1. Salva o Token e o Nome
         localStorage.setItem("jwtToken", data.token);
-        localStorage.setItem("usuarioLogado", username);
+        
+        // --- INÍCIO DA MUDANÇA ---
+        // Antes: localStorage.setItem("usuarioLogado", username);
+        // Agora:
+        localStorage.setItem("usuarioLogado", data.nomeUsuario); // <-- SALVA O NOME
+        // --- FIM DA MUDANÇA ---
 
         // 2. Decodifica o token para pegar ID e ROLE
         const tokenDecodificado = parseJwt(data.token);

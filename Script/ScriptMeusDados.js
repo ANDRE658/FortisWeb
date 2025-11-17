@@ -291,6 +291,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // 1. Carrega os dados do usuário
   carregarMeusDados();
 
+  // Pega o nome do usuário salvo no login e exibe no menu
+  const nomeUsuario = localStorage.getItem("usuarioLogado") || "Usuário";
+  const elUser = document.getElementById("userName");
+  if (elUser) elUser.textContent = nomeUsuario;
+
   // 2. Conecta os botões e formulários
   document.getElementById("btnToggleEdit").addEventListener("click", toggleEdit);
   document.getElementById("meusDadosForm").addEventListener("submit", salvarDadosPessoais);

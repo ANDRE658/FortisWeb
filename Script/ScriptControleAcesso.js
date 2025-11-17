@@ -14,6 +14,7 @@ function aplicarPermissoesDeMenu() {
             'Planos.html', 
             'Instrutor.html', 
             'Relatorios.html',
+            'Mensalidades.html',
             'Suporte.html'
         ],
         'ROLE_INSTRUTOR': [

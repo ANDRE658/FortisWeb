@@ -1,15 +1,30 @@
 // --- Variáveis Globais ---
 let alunoId = null;
-let alturaDoAlunoCm = 0; // Precisamos guardar a altura para recalcular o IMC
 
 /**
- * Função para calcular o IMC
+ * Função auxiliar para calcular o IMC
  */
 function calcularIMC(peso, alturaCm) {
     if (alturaCm <= 0) return 0;
     const alturaM = alturaCm / 100.0;
     const imc = peso / (alturaM * alturaM);
     return imc.toFixed(2); // Retorna formatado com 2 casas
+}
+
+/**
+ * Atualiza o display do IMC na tela em tempo real
+ * (baseado nos valores que estão nos inputs)
+ */
+function atualizarDisplayIMC() {
+    const peso = parseFloat(document.getElementById("peso").value);
+    const altura = parseFloat(document.getElementById("altura").value);
+    
+    if (peso > 0 && altura > 0) {
+        const imc = calcularIMC(peso, altura);
+        document.getElementById("imc").textContent = imc;
+    } else {
+        document.getElementById("imc").textContent = "--";
+    }
 }
 
 /**
@@ -22,7 +37,7 @@ function formatarData(dataISO) {
 }
 
 /**
- * Formata o sexo
+ * Formata o sexo para exibição
  */
 function formatarSexo(sexoChar) {
     if (sexoChar === 'M') return "Masculino";
@@ -31,7 +46,7 @@ function formatarSexo(sexoChar) {
 }
 
 /**
- * Carrega os dados do aluno da API
+ * Carrega os dados do aluno da API ao abrir a página
  */
 async function carregarDadosAluno() {
     const token = localStorage.getItem("jwtToken");
@@ -52,17 +67,18 @@ async function carregarDadosAluno() {
 
         const aluno = await response.json();
 
-        // Salva a altura para cálculos
-        alturaDoAlunoCm = aluno.altura || 0;
-
-        // Preenche os campos
+        // Preenche os campos de texto
         document.getElementById("nomeAlunoTitulo").textContent = aluno.nome || "Aluno";
         document.getElementById("idade").textContent = aluno.idade > 0 ? `${aluno.idade} anos` : "--";
         document.getElementById("sexo").textContent = formatarSexo(aluno.sexo);
-        document.getElementById("altura").textContent = `${aluno.altura || 0} cm`;
         document.getElementById("dataInicio").textContent = formatarData(aluno.dataInicio);
+        
+        // Preenche os Inputs (para permitir edição)
+        document.getElementById("altura").value = aluno.altura || 0;
         document.getElementById("peso").value = aluno.peso.toFixed(1) || 0;
-        document.getElementById("imc").textContent = aluno.imc > 0 ? aluno.imc : "--";
+        
+        // Calcula IMC inicial
+        atualizarDisplayIMC();
 
     } catch (error) {
         console.error("Erro:", error);
@@ -72,13 +88,50 @@ async function carregarDadosAluno() {
 }
 
 /**
- * Salva o novo peso
+ * Salva a NOVA ALTURA (Correção Cadastral)
  */
-async function salvarNovoPeso(event) {
+async function salvarNovaAltura(event) {
     event.preventDefault(); // Impede o recarregamento da página
     const token = localStorage.getItem("jwtToken");
-    const pesoInput = document.getElementById("peso");
-    const novoPeso = parseFloat(pesoInput.value);
+    const novaAltura = parseFloat(document.getElementById("altura").value);
+
+    if (!novaAltura || novaAltura <= 0) {
+        alert("Por favor, insira uma altura válida (em cm).");
+        return;
+    }
+
+    try {
+        // Chama o novo endpoint específico para altura
+        const response = await fetch(`http://localhost:8080/aluno/atualizar-altura/${alunoId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ novaAltura: novaAltura })
+        });
+
+        if (!response.ok) {
+            const erro = await response.text();
+            throw new Error(erro);
+        }
+
+        alert("Altura corrigida com sucesso!");
+        atualizarDisplayIMC(); // Garante que o IMC na tela esteja correto
+
+    } catch (error) {
+        console.error("Erro ao salvar altura:", error);
+        alert(`Erro: ${error.message}`);
+    }
+}
+
+/**
+ * Salva o NOVO PESO (Atualização de Rotina)
+ */
+async function salvarNovoPeso(event) {
+    event.preventDefault();
+    const token = localStorage.getItem("jwtToken");
+    const novoPeso = parseFloat(document.getElementById("peso").value);
 
     if (!novoPeso || novoPeso <= 0) {
         alert("Por favor, insira um peso válido.");
@@ -101,7 +154,7 @@ async function salvarNovoPeso(event) {
         }
 
         alert("Peso atualizado com sucesso!");
-        // Opcional: desabilitar o botão salvar até que o peso mude novamente
+        atualizarDisplayIMC();
 
     } catch (error) {
         console.error("Erro ao salvar peso:", error);
@@ -121,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    // 2. Carrega os dados
+    // 2. Carrega os dados iniciais
     carregarDadosAluno();
 
     // 3. Configura a navegação padrão
@@ -129,35 +182,28 @@ document.addEventListener("DOMContentLoaded", function () {
     const elUser = document.getElementById("userName");
     if (elUser) elUser.textContent = nomeUsuario;
 
+    // 4. Conecta os eventos dos DOIS formulários independentes
+    document.getElementById("alturaForm").addEventListener("submit", salvarNovaAltura);
+    document.getElementById("pesoForm").addEventListener("submit", salvarNovoPeso);
+
+    // 5. Recalcula o IMC dinamicamente enquanto o usuário digita (Feedback Visual)
+    document.getElementById("altura").addEventListener("input", atualizarDisplayIMC);
+    document.getElementById("peso").addEventListener("input", atualizarDisplayIMC);
+
+    // 6. Lógica de Menu e Sair
+    document.querySelectorAll(".nav-menu li").forEach((item) => {
+        item.addEventListener("click", function (event) {
+            const pagina = event.currentTarget.dataset.page;
+            if (pagina) window.location.href = pagina;
+        });
+    });
+
     document.getElementById("iconHome").addEventListener("click", () => window.location.href = 'home.html');
+    
     document.querySelector(".navbar .bi-box-arrow-right").addEventListener("click", () => {
         if (confirm("Deseja sair do sistema?")) {
             localStorage.clear();
             window.location.href = "Index.html";
         }
     });
-
-    // 4. Conecta os eventos do formulário
-    document.getElementById("pesoForm").addEventListener("submit", salvarNovoPeso);
-
-    // 5. Recalcula o IMC dinamicamente
-    document.getElementById("peso").addEventListener("input", (e) => {
-        const novoPeso = parseFloat(e.target.value);
-        if (novoPeso > 0 && alturaDoAlunoCm > 0) {
-            const novoImc = calcularIMC(novoPeso, alturaDoAlunoCm);
-            document.getElementById("imc").textContent = novoImc;
-        } else {
-            document.getElementById("imc").textContent = "--";
-        }
-    });
 });
-
-// 4. Lógica de navegação (Menu)
-  document.querySelectorAll(".nav-menu li").forEach((item) => {
-    item.addEventListener("click", function (event) {
-      const pagina = event.currentTarget.dataset.page;
-      if (pagina) {
-        window.location.href = pagina;
-      }
-    });
-  });

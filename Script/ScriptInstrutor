@@ -158,6 +158,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
   }
 
+  iconHome = document.getElementById("iconHome");
+  if(iconHome) {
+      iconHome.addEventListener("click", function () {
+          window.location.href = "Home.html";
+      });
+  }
+
   const btnCadastrar = document.getElementById("btCadastrarInstrutor");
   if(btnCadastrar) {
       btnCadastrar.addEventListener("click", function () {

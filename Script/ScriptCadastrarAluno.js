@@ -317,6 +317,7 @@ document.addEventListener("DOMContentLoaded", function () {
             dataNascimento: document.getElementById("nascimento").value, 
             altura: parseFloat(document.getElementById("altura").value),
             peso: parseFloat(document.getElementById("peso").value),
+            diaVencimento: parseInt(document.getElementById("diaVencimento").value),
             
             endereco: {
               rua: document.getElementById("rua").value,
