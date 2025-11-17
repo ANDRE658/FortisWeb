@@ -33,71 +33,88 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 /**
- * Busca a ficha do aluno logado e renderiza a semana.
+ * Busca a ficha do aluno logado usando o ID (Mais seguro que email)
  */
 async function carregarTreinoCompleto() {
   const token = localStorage.getItem("jwtToken");
-  const emailUsuario = localStorage.getItem("usuarioLogado");
-
   const loadingMessage = document.getElementById("loadingMessage");
   const containerDias = document.getElementById("containerDias");
   const btnEditar = document.getElementById("btnEditarTreino");
 
-  if (!token || !emailUsuario) {
+  if (!token) {
     loadingMessage.innerHTML = "<p style='color:red'>Sessão inválida. Faça o login novamente.</p>";
+    setTimeout(() => window.location.href = "Index.html", 2000);
     return;
   }
 
   try {
-    // 1. Busca TODAS as fichas (endpoint existente)
-    // (Idealmente, o back-end teria um endpoint /ficha-treino/minha-ficha)
+    // --- PASSO 1: Descobrir quem sou eu (Pega o ID do Aluno) ---
+    const responseMe = await fetch("http://localhost:8080/aluno/me", {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!responseMe.ok) {
+        throw new Error("Não foi possível identificar o aluno logado. Verifique se você é um Aluno.");
+    }
+    
+    const dadosAluno = await responseMe.json();
+    const meuId = dadosAluno.id; // ID seguro vindo do banco
+
+    // --- PASSO 2: Buscar as Fichas ---
     const response = await fetch("http://localhost:8080/ficha-treino/listar", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if (response.status === 204) {
+        throw new Error("Você ainda não possui uma ficha de treino cadastrada.");
+    }
+
     if (!response.ok) {
-        if (response.status === 204) { // 204 = Lista vazia
-            throw new Error("Você ainda não possui uma ficha de treino.");
-        }
-        throw new Error("Falha ao buscar fichas.");
+        throw new Error("Falha ao buscar lista de fichas.");
     }
 
     const fichas = await response.json();
 
-    // 2. Encontra a ficha deste aluno (pelo email)
-    const minhaFicha = fichas.find(f => f.aluno && f.aluno.email === emailUsuario);
+    // --- PASSO 3: Encontrar a ficha pelo ID (Infalível) ---
+    const minhaFicha = fichas.find(f => f.aluno && f.aluno.id === meuId);
 
     if (!minhaFicha) {
-        throw new Error("Você ainda não possui uma ficha de treino.");
+        throw new Error("Nenhuma ficha encontrada para o seu aluno.");
     }
 
-    // 3. Busca os detalhes COMPLETOS desta ficha
+    // --- PASSO 4: Buscar os detalhes COMPLETOS desta ficha ---
     const responseFicha = await fetch(`http://localhost:8080/ficha-treino/buscar/${minhaFicha.id}`, {
         headers: { Authorization: `Bearer ${token}` },
     });
     
     if(!responseFicha.ok) {
-        throw new Error("Falha ao carregar detalhes da ficha.");
+        throw new Error("Falha ao carregar os exercícios da ficha.");
     }
 
     const fichaCompleta = await responseFicha.json();
 
-    // 4. Configura o botão "Editar"
-    btnEditar.addEventListener("click", () => {
-        window.location.href = `CadastroTreino.html?id=${fichaCompleta.id}`;
-    });
+    // Configura botão editar (Esconde se for aluno, mostra se for instrutor/admin)
+    const userRole = localStorage.getItem("userRole");
+    if (btnEditar) {
+        if (userRole === 'ROLE_ALUNO') {
+            btnEditar.style.display = 'none';
+        } else {
+            btnEditar.addEventListener("click", () => {
+                window.location.href = `CadastroTreino.html?id=${fichaCompleta.id}`;
+            });
+        }
+    }
 
-    // 5. Renderiza os treinos na tela
+    // Renderiza na tela
     renderizarSemana(fichaCompleta.diasDeTreino);
     
-    // Mostra o conteúdo e esconde o "carregando"
     loadingMessage.style.display = "none";
     containerDias.style.display = "block";
 
   } catch (error) {
-    console.error("Erro ao carregar treino:", error);
-    loadingMessage.innerHTML = `<p style='color:red'>${error.message}</p>`;
-    btnEditar.style.display = "none"; // Esconde botão de editar se deu erro
+    console.error("Erro crítico:", error);
+    loadingMessage.innerHTML = `<p style='color:red; font-weight:bold;'>${error.message}</p>`;
+    if(btnEditar) btnEditar.style.display = "none"; 
   }
 }
 
@@ -114,7 +131,9 @@ function renderizarSemana(diasDeTreino) {
     if (!nomeContainer || !listaContainer) return;
 
     // Encontra o treino para este dia
-    const treinoDoDia = diasDeTreino.find(d => d.diaSemana === diaNome);
+    // Proteção: garante que diasDeTreino não é nulo
+    const listaDias = diasDeTreino || [];
+    const treinoDoDia = listaDias.find(d => d.diaSemana === diaNome);
 
     if (treinoDoDia && treinoDoDia.itensTreino && treinoDoDia.itensTreino.length > 0) {
       // Dia com treino
@@ -122,8 +141,7 @@ function renderizarSemana(diasDeTreino) {
       listaContainer.innerHTML = ""; // Limpa
 
       treinoDoDia.itensTreino.forEach(item => {
-        // O endpoint /buscar/ retorna a entidade, então o nome está em item.exercicio.nome
-        const nomeExercicio = item.exercicio ? item.exercicio.nome : "Exercício";
+        const nomeExercicio = (item.exercicio && item.exercicio.nome) ? item.exercicio.nome : "Exercício";
         
         const div = document.createElement("div");
         div.className = "exercise-item";

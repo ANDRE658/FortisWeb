@@ -21,7 +21,6 @@ function renderizarTabela(instrutores) {
         <td>${instrutor.cpf}</td>
         <td class="text-center">
           <i class="bi bi-pencil action-icon edit-btn" data-id="${instrutor.id}" title="Editar" style="margin-right: 15px; color: #00008B; cursor: pointer;"></i>
-          
           <i class="bi bi-trash action-icon delete-btn" data-id="${instrutor.id}" title="Excluir" style="color: #dc3545; cursor: pointer;"></i>
         </td>
       </tr>
@@ -44,7 +43,6 @@ async function excluirInstrutor(id) {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
         });
-
         if (response.ok || response.status === 204) {
             alert("Instrutor excluído com sucesso!");
             carregarInstrutores(); // Recarrega a lista
@@ -75,7 +73,6 @@ async function carregarInstrutores() {
         Authorization: `Bearer ${token}`,
       },
     });
-
     // Tratamento para lista vazia (204 No Content)
     if (response.status === 204) {
        todosInstrutores = [];
@@ -86,7 +83,7 @@ async function carregarInstrutores() {
     if (response.ok) {
       const instrutores = await response.json();
       todosInstrutores = instrutores; // Salva na lista global
-      renderizarTabela(todosInstrutores); // Renderiza a tabela
+      renderizarTabela(todosInstrutores);
     } else if (response.status === 403) {
       alert("Sua sessão expirou ou você não tem permissão.");
       window.location.href = "Index.html";
@@ -116,8 +113,8 @@ document.addEventListener("DOMContentLoaded", function () {
       searchInput.addEventListener("input", function (e) {
         const termoBusca = e.target.value.toLowerCase();
         const instrutoresFiltrados = todosInstrutores.filter(instrutor => 
-          instrutor.nome.toLowerCase().includes(termoBusca) ||
-          instrutor.cpf.includes(termoBusca)
+           instrutor.nome.toLowerCase().includes(termoBusca) ||
+           instrutor.cpf.includes(termoBusca)
         );
         renderizarTabela(instrutoresFiltrados);
       });
@@ -156,13 +153,6 @@ document.addEventListener("DOMContentLoaded", function () {
             window.location.href = "Index.html";
           }
         });
-  }
-
-  iconHome = document.getElementById("iconHome");
-  if(iconHome) {
-      iconHome.addEventListener("click", function () {
-          window.location.href = "Home.html";
-      });
   }
 
   const btnCadastrar = document.getElementById("btCadastrarInstrutor");

@@ -16,10 +16,8 @@ function renderizarTabela(fichas) {
   }
 
   fichas.forEach((ficha) => {
-    // O backend já nos mandou o Aluno junto com a Ficha
-    const nomeAluno = ficha.aluno ? ficha.aluno.nome : "Aluno não encontrado";
-
-    // Status (simulado, pois não temos no backend)
+    // Verificação de segurança para evitar erro se o aluno for nulo
+    const nomeAluno = (ficha.aluno && ficha.aluno.nome) ? ficha.aluno.nome : "Aluno não disponível";
     const statusHtml = '<span class="status-ativo">Ativo</span>';
 
     const newRow = `
